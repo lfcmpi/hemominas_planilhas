@@ -1,0 +1,123 @@
+# PRP Execution Report: Phase 3 — Grow
+
+**Date:** 2026-02-28
+**PRP:** pdf-to-sheets-banco-sangue-phase3-prp.md
+**Status:** COMPLETE
+
+---
+
+## Execution Summary
+
+| Metric | Value |
+|--------|-------|
+| Tasks | 9/9 complete |
+| Files Created | 14 |
+| Files Modified | 7 |
+| Tests Added | 41 (Phase 3) |
+| Total Tests | 147 (all pass) |
+| Corrections | 0 |
+
+---
+
+## Validation Results
+
+| Level | Description | Status |
+|-------|-------------|--------|
+| Level 1 | Syntax & Imports | PASS |
+| Level 2 | Unit Tests (41 Phase 3) | PASS |
+| Level 3 | Integration - History Store | PASS |
+| Level 4 | Integration - Dashboard Aggregation | PASS |
+| Level 5 | Full Suite (147 tests, Phase 1+2+3) | PASS |
+
+---
+
+## Files Created
+
+| File | Purpose |
+|------|---------|
+| `data/.gitkeep` | Directory for SQLite database |
+| `src/batch_processor.py` | Batch PDF processing orchestration |
+| `src/history_store.py` | SQLite CRUD for import history + alert config |
+| `src/dashboard_service.py` | Stock aggregation with cache |
+| `src/alert_service.py` | Expiry verification + notification dispatch |
+| `src/email_sender.py` | SMTP email composition and sending |
+| `src/scheduler.py` | APScheduler daily alert job |
+| `src/templates/history.html` | History listing page |
+| `src/templates/history_detail.html` | Import detail page |
+| `src/templates/dashboard.html` | Stock dashboard page |
+| `src/templates/alert_settings.html` | Alert configuration page |
+| `src/static/history.js` | History page logic |
+| `src/static/dashboard.js` | Dashboard rendering + bar charts |
+| `src/static/alert_settings.js` | Alert config form logic |
+| `tests/test_history_store.py` | 14 tests |
+| `tests/test_batch_processor.py` | 7 tests |
+| `tests/test_dashboard_service.py` | 13 tests |
+| `tests/test_alert_service.py` | 7 tests |
+
+## Files Modified
+
+| File | Changes |
+|------|---------|
+| `requirements.txt` | Added APScheduler>=3.10 |
+| `.env.example` | Added SQLITE, SMTP, SCHEDULER, CACHE vars |
+| `.gitignore` | Added data/*.db |
+| `src/config.py` | Added Phase 3 config variables |
+| `src/app.py` | Added batch, history, dashboard, alert routes (18 total routes) |
+| `src/sheets_reader.py` | Added ler_planilha_completa() |
+| `src/templates/index.html` | Multi-file upload, navigation header |
+| `src/static/app.js` | Batch upload flow, file list management |
+| `src/static/style.css` | Navigation, dashboard, history, alert styles |
+
+---
+
+## API Routes (18 total)
+
+| Method | Route | Feature |
+|--------|-------|---------|
+| GET | / | Upload page |
+| POST | /api/upload | Single PDF upload (Phase 1) |
+| POST | /api/enviar | Send to Sheets (Phase 1) |
+| POST | /api/validate-field | Field validation (Phase 2) |
+| POST | /api/batch/upload | Batch PDF upload (Phase 3) |
+| POST | /api/batch/enviar | Batch send + history (Phase 3) |
+| GET | /historico | History page (Phase 3) |
+| GET | /historico/<id> | History detail page (Phase 3) |
+| GET | /api/historico | History API (Phase 3) |
+| GET | /api/historico/<id> | History detail API (Phase 3) |
+| GET | /dashboard | Dashboard page (Phase 3) |
+| GET | /api/dashboard | Dashboard data API (Phase 3) |
+| GET | /alertas/config | Alert settings page (Phase 3) |
+| GET | /api/alertas/config | Alert config API (Phase 3) |
+| PUT | /api/alertas/config | Update alert config (Phase 3) |
+| GET | /api/alertas/verificar | Manual alert check (Phase 3) |
+| POST | /api/alertas/testar-email | Test SMTP email (Phase 3) |
+| GET | /api/alertas/pendentes | Alert badge count (Phase 3) |
+
+---
+
+## Success Criteria Status
+
+- [x] Upload aceita multiplos PDFs simultaneamente (drag-and-drop ou selecao multipla)
+- [x] Cada PDF e processado independentemente — erro em um nao bloqueia os demais
+- [x] Status individual por arquivo durante processamento
+- [x] Preview consolida dados de todos os PDFs do lote antes de escrita
+- [x] Resumo final mostra: X arquivos processados, Y bolsas importadas, Z erros
+- [x] Cada importacao e registrada em SQLite com: data/hora, nome PDF, num comprovante, qtd bolsas, status
+- [x] Tela de historico lista importacoes em ordem cronologica reversa
+- [x] Filtro por periodo (data inicio/fim) funciona corretamente
+- [x] Detalhe de importacao mostra bolsas individuais importadas
+- [x] Historico persiste entre reinicializacoes do servidor
+- [x] Dashboard mostra contagem de bolsas por GS/RH como barras horizontais
+- [x] Dashboard mostra contagem de bolsas por tipo de hemocomponente
+- [x] Dashboard filtra apenas bolsas "em estoque" (colunas E e F vazias)
+- [x] Dashboard destaca bolsas vencendo em 7, 14, 30 dias
+- [x] Botao "Atualizar" recarrega dados do Google Sheets
+- [x] Alertas de vencimento com thresholds configuraveis (padrao: 7 e 14 dias)
+- [x] Alerta exibe: tipo hemocomponente, GS/RH, num bolsa, dias ate vencimento
+- [x] Notificacao in-app (banner no dashboard) funciona
+- [x] Notificacao por email funciona (SMTP configuravel)
+- [x] Configuracoes de alerta persistem entre sessoes
+
+---
+
+*Report generated by dev-kit:11-execute-prp*

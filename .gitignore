@@ -1,5 +1,8 @@
 credentials/
 !credentials/.gitkeep
+cred/
+docs_novos/
+insumos/
 .env
 __pycache__/
 *.pyc
