@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         kpiAlertasCard.style.cursor = "pointer";
         kpiAlertasCard.title = "Ver bolsas com vencimento proximo";
         kpiAlertasCard.onclick = () => {
-          window.location.href = "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao;
+          window.location.href = "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao + "&em_estoque=1";
         };
       }
       const subParts = [];
@@ -91,21 +91,21 @@ document.addEventListener("DOMContentLoaded", () => {
         alertBanners.appendChild(makeBanner(
           "vencidas",
           estoque.vencendo.vencidas.count + " bolsa(s) ja vencida(s)",
-          "/consulta?vencimento=vencidas&dias_max=0"
+          "/consulta?vencimento=vencidas&dias_max=0&em_estoque=1"
         ));
       }
       if (estoque.vencendo.urgente.count > 0) {
         alertBanners.appendChild(makeBanner(
           "urgente",
           estoque.vencendo.urgente.count + " bolsa(s) vence(m) em ate " + thresholdUrgente + " dias",
-          "/consulta?vencimento=urgente&dias_max=" + thresholdUrgente
+          "/consulta?vencimento=urgente&dias_max=" + thresholdUrgente + "&em_estoque=1"
         ));
       }
       if (estoque.vencendo.atencao.count > 0) {
         alertBanners.appendChild(makeBanner(
           "atencao",
           estoque.vencendo.atencao.count + " bolsa(s) vence(m) em ate " + thresholdAtencao + " dias",
-          "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao
+          "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao + "&em_estoque=1"
         ));
       }
     }
@@ -155,21 +155,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (estoque.vencendo.vencidas && estoque.vencendo.vencidas.bolsas && estoque.vencendo.vencidas.bolsas.length > 0) {
         expirySection.appendChild(renderExpiryGroup(
           "Vencidas", estoque.vencendo.vencidas.bolsas, "vencidas",
-          "/consulta?vencimento=vencidas&dias_max=0"
+          "/consulta?vencimento=vencidas&dias_max=0&em_estoque=1"
         ));
         hasExpiry = true;
       }
       if (estoque.vencendo.urgente.bolsas && estoque.vencendo.urgente.bolsas.length > 0) {
         expirySection.appendChild(renderExpiryGroup(
           "Urgente", estoque.vencendo.urgente.bolsas, "urgente",
-          "/consulta?vencimento=urgente&dias_max=" + thresholdUrgente
+          "/consulta?vencimento=urgente&dias_max=" + thresholdUrgente + "&em_estoque=1"
         ));
         hasExpiry = true;
       }
       if (estoque.vencendo.atencao.bolsas && estoque.vencendo.atencao.bolsas.length > 0) {
         expirySection.appendChild(renderExpiryGroup(
           "Atencao", estoque.vencendo.atencao.bolsas, "atencao",
-          "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao
+          "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao + "&em_estoque=1"
         ));
         hasExpiry = true;
       }

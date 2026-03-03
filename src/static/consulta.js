@@ -464,11 +464,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const urlParams = new URLSearchParams(window.location.search);
     const vencimento = urlParams.get("vencimento");
     const diasMax = urlParams.get("dias_max");
+    const emEstoque = urlParams.get("em_estoque");
     if (vencimento && diasMax) {
         if (vencimento === "vencidas") {
             state.filters.vencidas = "1";
         } else {
             state.filters.dias_vencimento_max = diasMax;
+        }
+        if (emEstoque) {
+            state.filters.em_estoque = "1";
         }
         state.sort_by = "dias_antes_vencimento";
         state.sort_dir = "asc";
@@ -535,6 +539,7 @@ function showVencimentoFilter(tipo, dias) {
 function limparVencimento() {
     delete state.filters.dias_vencimento_max;
     delete state.filters.vencidas;
+    delete state.filters.em_estoque;
     state.page = 1;
     const badge = document.getElementById("vencimento-filter-badge");
     if (badge) badge.remove();

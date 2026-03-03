@@ -876,6 +876,11 @@ def api_consulta():
     if vencidas:
         filters["vencidas"] = vencidas
 
+    # Em estoque filter (exclude bolsas with destino or data_transfusao filled)
+    em_estoque = request.args.get("em_estoque")
+    if em_estoque:
+        filters["em_estoque"] = em_estoque
+
     result = consultar_planilha(SQLITE_DB_PATH, page, per_page, search, sort_by, sort_dir, filters)
     return jsonify(result)
 

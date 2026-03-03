@@ -52,7 +52,16 @@ function formatDetalhes(detalhesStr) {
         const parts = [];
         for (const [k, v] of Object.entries(obj)) {
             if (k === "valor_anterior" || k === "valor_novo") continue;
-            parts.push(`<span class="audit-detail-key">${esc(k)}:</span> ${esc(String(v))}`);
+            let valStr;
+            if (Array.isArray(v)) {
+                valStr = v.join(", ");
+            } else {
+                valStr = String(v);
+            }
+            if (valStr.length > 120) {
+                valStr = valStr.substring(0, 120) + "...";
+            }
+            parts.push(`<span class="audit-detail-key">${esc(k)}:</span> ${esc(valStr)}`);
         }
         if (obj.valor_anterior !== undefined || obj.valor_novo !== undefined) {
             const ant = obj.valor_anterior || "(vazio)";
@@ -104,7 +113,7 @@ function renderTabela(rows) {
             <td>${user}</td>
             <td>${badge}</td>
             <td>${esc(r.descricao)}</td>
-            <td class="audit-detalhes-cell">${formatDetalhes(r.detalhes)}</td>
+            <td class="audit-detalhes-cell"><div class="audit-detalhes-content">${formatDetalhes(r.detalhes)}</div></td>
         </tr>`;
     }).join("");
 }

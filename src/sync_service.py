@@ -467,6 +467,13 @@ def consultar_planilha(db_path: str, page: int = 1, per_page: int = 25,
                 where_clauses.append(f"{col} = ?")
                 params.append(val)
 
+        # Filter: em_estoque (exclude bolsas with destino or data_transfusao filled)
+        if filters.get("em_estoque"):
+            where_clauses.append(
+                "(destino IS NULL OR destino = '') "
+                "AND (data_transfusao IS NULL OR data_transfusao = '')"
+            )
+
         # Filter: vencidas (expired bags, dias < 0)
         if filters.get("vencidas"):
             where_clauses.append(
