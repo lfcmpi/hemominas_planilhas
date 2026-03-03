@@ -734,6 +734,7 @@ tbody tr:hover {
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 500;
+    cursor: help;
 }
 
 .badge-info {
@@ -813,8 +814,9 @@ tbody tr:hover {
 
 .status-warn {
     color: #d97706;
-    font-weight: bold;
-    cursor: help;
+    font-weight: 500;
+    font-size: 0.8rem;
+    white-space: nowrap;
 }
 
 /* Checkbox column */
@@ -824,7 +826,7 @@ tbody tr:hover {
 }
 
 .col-status {
-    width: 50px;
+    min-width: 50px;
     text-align: center;
 }
 

@@ -80,8 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
         showError("'" + file.name + "' nao e PDF. Apenas arquivos PDF sao aceitos.");
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        showError("'" + file.name + "' e muito grande (max 10 MB).");
+      if (file.size > 30 * 1024 * 1024) {
+        showError("'" + file.name + "' e muito grande (max 30 MB).");
         continue;
       }
       // Check duplicate filename
@@ -271,6 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Badge: files (Phase 3)
     if (summary.total_files && summary.total_files > 1) {
       badgeFiles.textContent = summary.success_files + "/" + summary.total_files + " arquivos";
+      badgeFiles.title = "Quantidade de arquivos PDF processados com sucesso no lote";
       badgeFiles.classList.remove("hidden");
     } else {
       badgeFiles.classList.add("hidden");
@@ -280,10 +281,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalComprovantes = summary.total_comprovantes || summary.success_files || 0;
     const totalBolsas = summary.total_bolsas || 0;
     badgeComprovantes.textContent = totalComprovantes + " comprov.";
+    badgeComprovantes.title = "Total de comprovantes de transfusao extraidos dos PDFs";
     badgeBolsas.textContent = totalBolsas + " bolsas";
+    badgeBolsas.title = "Total de bolsas de sangue identificadas para importacao";
 
     if (summary.total_duplicatas > 0) {
       badgeDuplicatas.textContent = summary.total_duplicatas + " duplicata(s)";
+      badgeDuplicatas.title = "Bolsas cujo numero ja existe na planilha Google Sheets. Sao desmarcadas automaticamente para evitar duplicidade.";
       badgeDuplicatas.classList.remove("hidden");
     } else {
       badgeDuplicatas.classList.add("hidden");
@@ -291,13 +295,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (summary.total_erros_criticos > 0) {
       badgeErros.textContent = summary.total_erros_criticos + " erro(s)";
+      badgeErros.title = "Erros criticos que bloqueiam o envio. Ex: Tipo de hemocomponente ou GS/RH nao encontrado na aba BASE. Corrija clicando na linha.";
       badgeErros.classList.remove("hidden");
     } else {
       badgeErros.classList.add("hidden");
     }
 
     if (summary.total_warnings > 0) {
-      badgeWarnings.textContent = summary.total_warnings + " aviso(s)";
+      // Collect distinct warning messages across all rows
+      const warnCounts = {};
+      data.linhas.forEach((l) => {
+        l.erros.filter((e) => e.nivel === "warning").forEach((e) => {
+          warnCounts[e.mensagem] = (warnCounts[e.mensagem] || 0) + 1;
+        });
+      });
+      const warnSummary = Object.entries(warnCounts)
+        .map(([msg, count]) => count + "x " + msg)
+        .join(" | ");
+      badgeWarnings.textContent = summary.total_warnings + " aviso(s): " + warnSummary;
+      badgeWarnings.title = "Avisos que NAO bloqueiam o envio, mas merecem atencao. Voce pode prosseguir mesmo com avisos.";
       badgeWarnings.classList.remove("hidden");
     } else {
       badgeWarnings.classList.add("hidden");
@@ -348,28 +364,40 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (hasWarning) tr.classList.add("row-warning");
 
       // Status icon
-      let statusIcon = '<span class="status-ok" title="OK">&#10003;</span>';
+      let statusIcon = '<span class="status-ok" title="Linha OK — todos os campos validados com sucesso">&#10003;</span>';
       if (hasError) {
         const errMsg = linha.erros
           .filter((e) => e.nivel === "error")
           .map((e) => e.mensagem)
           .join("; ");
         statusIcon =
-          '<span class="status-error" title="' +
+          '<span class="status-error" title="Erro critico (bloqueia envio): ' +
           escapeHtml(errMsg) +
-          '">&#10007;</span>';
+          '. Clique na linha para corrigir.">&#10007;</span>';
+        if (hasWarning) {
+          const warnDetails = linha.erros
+            .filter((e) => e.nivel === "warning")
+            .map((e) => escapeHtml(e.mensagem));
+          statusIcon +=
+            ' <span class="status-warn" title="Aviso (nao bloqueia envio): ' +
+            warnDetails.join("; ") +
+            '">! ' +
+            warnDetails.join("; ") +
+            '</span>';
+        }
       } else if (isDup) {
         statusIcon =
-          '<span class="status-dup" title="Duplicata: bolsa ja existe na planilha">D</span>';
+          '<span class="status-dup" title="Duplicata: esta bolsa ja foi importada na planilha. Desmarcada automaticamente para evitar duplicidade.">D</span>';
       } else if (hasWarning) {
-        const warnMsg = linha.erros
+        const warnDetails = linha.erros
           .filter((e) => e.nivel === "warning")
-          .map((e) => e.mensagem)
-          .join("; ");
+          .map((e) => escapeHtml(e.mensagem));
         statusIcon =
-          '<span class="status-warn" title="' +
-          escapeHtml(warnMsg) +
-          '">!</span>';
+          '<span class="status-warn" title="Aviso (nao bloqueia envio): ' +
+          warnDetails.join("; ") +
+          '">! ' +
+          warnDetails.join("; ") +
+          '</span>';
       }
 
       tr.innerHTML =
