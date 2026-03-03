@@ -408,10 +408,12 @@ def atualizar_campo_planilha(db_path: str, num_bolsa: str, campo: str,
     now = datetime.now().isoformat()
     with get_db(db_path) as conn:
         existing = conn.execute(
-            "SELECT id FROM planilha_data WHERE num_bolsa = ?", (num_bolsa,)
+            f"SELECT id, {campo} FROM planilha_data WHERE num_bolsa = ?", (num_bolsa,)
         ).fetchone()
         if not existing:
             raise ValueError(f"Bolsa '{num_bolsa}' nao encontrada.")
+
+        valor_anterior = existing[campo] or ""
 
         conn.execute(
             f"UPDATE planilha_data SET {campo} = ?, edited_by = ?, edited_at = ?, updated_at = ? "
@@ -419,7 +421,8 @@ def atualizar_campo_planilha(db_path: str, num_bolsa: str, campo: str,
             (valor, user_email, now, now, num_bolsa),
         )
 
-    return {"status": "sucesso", "campo": campo, "valor": valor, "num_bolsa": num_bolsa}
+    return {"status": "sucesso", "campo": campo, "valor": valor,
+            "valor_anterior": valor_anterior, "num_bolsa": num_bolsa}
 
 
 _ALLOWED_SORT_COLUMNS = {

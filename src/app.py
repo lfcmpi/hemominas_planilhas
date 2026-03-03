@@ -31,6 +31,7 @@ from src.dashboard_service import DashboardService
 from src.field_mapper import LinhaPlanilha, mapear_comprovantes
 from src.history_store import (
     init_db,
+    listar_auditoria,
     listar_importacoes,
     obter_alert_config,
     obter_app_config,
@@ -38,9 +39,11 @@ from src.history_store import (
     obter_estatisticas_importacoes,
     obter_evolucao_diaria,
     obter_evolucao_por_tipo,
+    obter_filtros_auditoria,
     obter_importacao,
     obter_top_bolsas_recentes,
     registrar_importacao,
+    registrar_operacao,
     salvar_alert_config,
 )
 from src.pdf_extractor import extrair_pdf
@@ -102,6 +105,26 @@ from src.config_loader import aplicar_config_runtime, carregar_config_do_banco
 carregar_config_do_banco(SQLITE_DB_PATH)
 
 
+def _client_ip():
+    """Return the client IP address (supports proxied requests)."""
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "")
+
+
+def _audit(operacao, descricao, detalhes=None, entidade_tipo="", entidade_id=""):
+    """Shorthand to log an audit entry for the current user."""
+    registrar_operacao(
+        SQLITE_DB_PATH,
+        current_user.email,
+        current_user.name,
+        operacao,
+        descricao,
+        detalhes=detalhes,
+        ip_address=_client_ip(),
+        entidade_tipo=entidade_tipo,
+        entidade_id=entidade_id,
+    )
+
+
 @app.route("/login", methods=["GET"])
 def login_page():
     if current_user.is_authenticated:
@@ -115,13 +138,25 @@ def login_submit():
     password = request.form.get("password", "")
     user = authenticate(SQLITE_DB_PATH, email, password)
     if user is None:
+        registrar_operacao(
+            SQLITE_DB_PATH, email, "", "LOGIN_FALHA",
+            f"Tentativa de login falhou para {email}",
+            ip_address=_client_ip(), entidade_tipo="usuario",
+        )
         return render_template("login.html", error="Email ou senha incorretos.")
     login_user(user, remember=True)
+    registrar_operacao(
+        SQLITE_DB_PATH, user.email, user.name, "LOGIN",
+        f"{user.name} realizou login",
+        ip_address=_client_ip(), entidade_tipo="usuario",
+    )
     return redirect(url_for("index"))
 
 
 @app.route("/logout")
 def logout():
+    if current_user.is_authenticated:
+        _audit("LOGOUT", f"{current_user.name} realizou logout")
     logout_user()
     return redirect(url_for("login_page"))
 
@@ -214,6 +249,10 @@ def upload_pdf():
         total_warnings = sum(
             1 for p in preview if any(e.nivel == "warning" for e in p.erros)
         )
+
+        _audit("UPLOAD_PDF", f"Upload PDF: {file.filename} ({len(linhas)} bolsas)",
+               detalhes={"filename": file.filename, "bolsas": len(linhas)},
+               entidade_tipo="bolsa")
 
         return jsonify({
             "comprovantes": len(comprovantes),
@@ -311,6 +350,10 @@ def enviar_planilha():
             }
             destino = "banco_local"
 
+        _audit("ENVIAR_PLANILHA", f"Enviou {len(linhas)} bolsa(s) para {destino}",
+               detalhes={"destino": destino, "bolsas": len(linhas)},
+               entidade_tipo="bolsa")
+
         resultado["destino"] = destino
         return jsonify(resultado)
 
@@ -401,6 +444,12 @@ def batch_upload():
         total_warnings = sum(
             1 for p in all_preview if any(e.nivel == "warning" for e in p.erros)
         )
+
+        filenames = [f.filename for f in files]
+        _audit("UPLOAD_BATCH",
+               f"Upload em lote: {len(files)} arquivo(s), {len(all_preview)} bolsa(s)",
+               detalhes={"filenames": filenames, "total_bolsas": len(all_preview)},
+               entidade_tipo="bolsa")
 
         return jsonify({
             "files": files_json,
@@ -518,6 +567,11 @@ def batch_enviar():
                             "Serao sincronizadas com a planilha quando a conexao for restabelecida.",
             }
             destino = "banco_local"
+
+        _audit("ENVIAR_BATCH",
+               f"Enviou lote: {len(linhas)} bolsa(s) para {destino}",
+               detalhes={"destino": destino, "import_ids": import_ids, "bolsas": len(linhas)},
+               entidade_tipo="bolsa")
 
         resultado["import_ids"] = import_ids
         resultado["destino"] = destino
@@ -687,6 +741,10 @@ def api_alertas_config_put():
         "inapp_enabled": data.get("inapp_enabled", True),
     })
 
+    _audit("ALTERAR_ALERTAS", "Alterou configuracao de alertas",
+           detalhes={"threshold_urgente": urgente, "threshold_atencao": atencao},
+           entidade_tipo="config")
+
     return jsonify({"mensagem": "Configuracao salva com sucesso."})
 
 
@@ -758,6 +816,9 @@ def consulta_page():
 def api_sync():
     """Trigger manual sync from Google Sheets."""
     result = executar_sync(SQLITE_DB_PATH)
+    _audit("SYNC_MANUAL", f"Sincronizacao manual: {result.get('status')}",
+           detalhes={"status": result.get("status"), "rows_synced": result.get("rows_synced", 0)},
+           entidade_tipo="sync")
     return jsonify(result)
 
 
@@ -774,6 +835,9 @@ def api_pendentes():
 def api_pendentes_sync():
     """Tenta sincronizar registros pendentes com Google Sheets."""
     result = sincronizar_pendentes(SQLITE_DB_PATH)
+    _audit("SYNC_PENDENTES", f"Sincronizacao pendentes: {result.get('status')}",
+           detalhes={"status": result.get("status"), "total": result.get("total", 0)},
+           entidade_tipo="sync")
     return jsonify(result)
 
 
@@ -832,6 +896,15 @@ def api_planilha_edit(num_bolsa):
             SQLITE_DB_PATH, num_bolsa, data["campo"],
             data["valor"], current_user.email,
         )
+        _audit("EDITAR_CAMPO",
+               f"Editou {data['campo']} da bolsa {num_bolsa}",
+               detalhes={
+                   "campo": data["campo"],
+                   "num_bolsa": num_bolsa,
+                   "valor_anterior": result.get("valor_anterior", ""),
+                   "valor_novo": data["valor"],
+               },
+               entidade_tipo="bolsa", entidade_id=num_bolsa)
         return jsonify(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -908,7 +981,12 @@ def api_configuracoes_put():
     if data.get("smtp_password") == "\u2022\u2022\u2022\u2022\u2022\u2022":
         data["smtp_password"] = config_mod.SMTP_PASSWORD
 
+    # Log config changes (exclude sensitive fields)
+    safe_keys = [k for k in data if k not in ("smtp_password",)]
     aplicar_config_runtime(SQLITE_DB_PATH, data)
+    _audit("ALTERAR_CONFIG", "Alterou configuracoes do sistema",
+           detalhes={"campos_alterados": safe_keys},
+           entidade_tipo="config")
     return jsonify({"mensagem": "Configuracoes salvas com sucesso."})
 
 
@@ -963,6 +1041,9 @@ def api_upload_credentials():
     creds_path.parent.mkdir(parents=True, exist_ok=True)
     creds_path.write_bytes(content)
 
+    _audit("UPLOAD_CREDENCIAIS", "Fez upload de arquivo de credenciais Google",
+           entidade_tipo="config")
+
     return jsonify({
         "mensagem": "Credenciais salvas com sucesso.",
         "path": str(creds_path),
@@ -1004,6 +1085,11 @@ def api_usuarios_create():
             data.get("password", ""),
             data.get("role", "consulta"),
         )
+        _audit("CRIAR_USUARIO",
+               f"Criou usuario {data.get('email')} ({data.get('role', 'consulta')})",
+               detalhes={"email": data.get("email"), "name": data.get("name"),
+                         "role": data.get("role", "consulta")},
+               entidade_tipo="usuario", entidade_id=str(user_id))
         return jsonify({"id": user_id, "mensagem": "Usuario criado com sucesso."})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -1026,6 +1112,11 @@ def api_usuarios_update(user_id):
             role=data.get("role"),
             password=data.get("password") if data.get("password") else None,
         )
+        campos = [k for k in ("name", "role", "password") if data.get(k)]
+        _audit("ATUALIZAR_USUARIO",
+               f"Atualizou usuario ID {user_id}",
+               detalhes={"user_id": user_id, "campos_alterados": campos},
+               entidade_tipo="usuario", entidade_id=str(user_id))
         return jsonify({"mensagem": "Usuario atualizado com sucesso."})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -1042,9 +1133,56 @@ def api_usuarios_delete(user_id):
 
     try:
         excluir_usuario(SQLITE_DB_PATH, user_id)
+        _audit("EXCLUIR_USUARIO",
+               f"Excluiu usuario ID {user_id}",
+               detalhes={"user_id": user_id},
+               entidade_tipo="usuario", entidade_id=str(user_id))
         return jsonify({"mensagem": "Usuario excluido com sucesso."})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+
+# === AUDITORIA — admin, manager ===
+
+@app.route("/auditoria")
+@login_required
+@role_required("admin", "manager")
+def auditoria_page():
+    return render_template("auditoria.html", active_page="auditoria")
+
+
+@app.route("/api/auditoria")
+@login_required
+@role_required("admin", "manager")
+def api_auditoria():
+    """Lista registros de auditoria com filtros e paginacao."""
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 25))
+    data_inicio = request.args.get("data_inicio")
+    data_fim = request.args.get("data_fim")
+    user_email = request.args.get("user_email")
+    operacao = request.args.get("operacao")
+
+    registros, total = listar_auditoria(
+        SQLITE_DB_PATH, data_inicio=data_inicio, data_fim=data_fim,
+        user_email=user_email, operacao=operacao, page=page, per_page=per_page,
+    )
+
+    return jsonify({
+        "registros": registros,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+    })
+
+
+@app.route("/api/auditoria/filtros")
+@login_required
+@role_required("admin", "manager")
+def api_auditoria_filtros():
+    """Retorna listas distintas de usuarios e operacoes."""
+    filtros = obter_filtros_auditoria(SQLITE_DB_PATH)
+    return jsonify(filtros)
 
 
 # Initialize scheduler if enabled

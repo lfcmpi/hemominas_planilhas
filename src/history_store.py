@@ -1,5 +1,6 @@
 """Armazenamento de historico de importacoes e configuracao de alertas (SQLite)."""
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -106,6 +107,26 @@ def init_db(db_path: str):
                 key TEXT PRIMARY KEY,
                 value TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                user_email TEXT NOT NULL,
+                user_name TEXT NOT NULL DEFAULT '',
+                operacao TEXT NOT NULL,
+                descricao TEXT NOT NULL,
+                detalhes TEXT DEFAULT '',
+                ip_address TEXT DEFAULT '',
+                entidade_tipo TEXT DEFAULT '',
+                entidade_id TEXT DEFAULT ''
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp
+                ON audit_log(timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_log_operacao
+                ON audit_log(operacao);
+            CREATE INDEX IF NOT EXISTS idx_audit_log_user_email
+                ON audit_log(user_email);
         """)
 
         # Migration: add pending_sync column if missing (existing databases)
@@ -439,3 +460,78 @@ def salvar_app_config(db_path, config: dict):
                 "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, str(value) if value is not None else ""),
             )
+
+
+# ==========================================
+# Auditoria (Audit Log)
+# ==========================================
+
+
+def registrar_operacao(db_path, user_email, user_name, operacao, descricao,
+                       detalhes=None, ip_address="", entidade_tipo="",
+                       entidade_id=""):
+    """Insere registro no audit_log."""
+    detalhes_str = ""
+    if detalhes:
+        detalhes_str = json.dumps(detalhes, ensure_ascii=False) if isinstance(detalhes, dict) else str(detalhes)
+    with get_db(db_path) as conn:
+        conn.execute(
+            "INSERT INTO audit_log (timestamp, user_email, user_name, operacao, "
+            "descricao, detalhes, ip_address, entidade_tipo, entidade_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (datetime.now().isoformat(), user_email, user_name, operacao,
+             descricao, detalhes_str, ip_address, entidade_tipo, entidade_id),
+        )
+
+
+def listar_auditoria(db_path, data_inicio=None, data_fim=None,
+                      user_email=None, operacao=None, page=1, per_page=25):
+    """Retorna (registros, total) do audit_log com filtros e paginacao."""
+    with get_db(db_path) as conn:
+        where_clauses = []
+        params = []
+
+        if data_inicio:
+            where_clauses.append("timestamp >= ?")
+            params.append(data_inicio + "T00:00:00")
+        if data_fim:
+            where_clauses.append("timestamp <= ?")
+            params.append(data_fim + "T23:59:59")
+        if user_email:
+            where_clauses.append("user_email = ?")
+            params.append(user_email)
+        if operacao:
+            where_clauses.append("operacao = ?")
+            params.append(operacao)
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+        total = conn.execute(
+            f"SELECT COUNT(*) as total FROM audit_log {where_sql}", params
+        ).fetchone()["total"]
+
+        offset = (page - 1) * per_page
+        rows = conn.execute(
+            f"SELECT * FROM audit_log {where_sql} "
+            f"ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+            params + [per_page, offset],
+        ).fetchall()
+
+        return [dict(r) for r in rows], total
+
+
+def obter_filtros_auditoria(db_path):
+    """Retorna listas distintas de usuarios e operacoes para dropdowns."""
+    with get_db(db_path) as conn:
+        users = conn.execute(
+            "SELECT DISTINCT user_email FROM audit_log ORDER BY user_email"
+        ).fetchall()
+        ops = conn.execute(
+            "SELECT DISTINCT operacao FROM audit_log ORDER BY operacao"
+        ).fetchall()
+        return {
+            "usuarios": [r["user_email"] for r in users],
+            "operacoes": [r["operacao"] for r in ops],
+        }

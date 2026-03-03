@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Auditoria - Hemominas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Auditoria</h1>
+    <p class="subtitle">Registro de operacoes realizadas no sistema</p>
+</div>
+
+<div class="audit-filters">
+    <label>
+        De
+        <input type="date" id="audit-data-inicio">
+    </label>
+    <label>
+        Ate
+        <input type="date" id="audit-data-fim">
+    </label>
+    <label>
+        Usuario
+        <select id="audit-usuario" class="consulta-select">
+            <option value="">Todos</option>
+        </select>
+    </label>
+    <label>
+        Operacao
+        <select id="audit-operacao" class="consulta-select">
+            <option value="">Todas</option>
+        </select>
+    </label>
+    <button class="btn btn-primary btn-sm" onclick="filtrar()">Filtrar</button>
+    <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar</button>
+</div>
+
+<div class="table-container consulta-table-wrap">
+    <table class="consulta-table" id="audit-table">
+        <thead>
+            <tr>
+                <th>Data/Hora</th>
+                <th>Usuario</th>
+                <th>Operacao</th>
+                <th>Descricao</th>
+                <th>Detalhes</th>
+            </tr>
+        </thead>
+        <tbody id="audit-tbody">
+        </tbody>
+    </table>
+</div>
+
+<div class="consulta-pagination" id="pagination-area">
+    <div class="consulta-pagination-info" id="pagination-info">Carregando...</div>
+    <div class="consulta-pagination-controls">
+        <select id="per-page-select" class="consulta-select">
+            <option value="10">10 por pagina</option>
+            <option value="25" selected>25 por pagina</option>
+            <option value="50">50 por pagina</option>
+            <option value="100">100 por pagina</option>
+        </select>
+        <div class="consulta-pagination-btns" id="pagination-btns"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/auditoria.js"></script>
+{% endblock %}
