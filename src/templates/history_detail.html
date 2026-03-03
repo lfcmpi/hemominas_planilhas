@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Detalhe Importacao - Hemominas Sheets{% endblock %}
+
+{% block content %}
+        <div class="page-header">
+            <a href="/historico" class="btn btn-secondary" style="margin-bottom:1rem;display:inline-block">&larr; Voltar</a>
+            <h1>Detalhe da Importacao</h1>
+        </div>
+
+        <div id="detail-card" class="detail-card">
+            <dl class="detail-meta" id="detail-meta"></dl>
+            <div id="detail-error" class="detail-error hidden"></div>
+        </div>
+
+        <h2 style="font-size:1.1rem;margin-bottom:0.75rem">Bolsas Importadas</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Num Bolsa</th>
+                        <th>Tipo Hemocomponente</th>
+                        <th>GS/RH</th>
+                        <th>Volume</th>
+                        <th>Validade</th>
+                    </tr>
+                </thead>
+                <tbody id="bolsas-body"></tbody>
+            </table>
+        </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const pathParts = window.location.pathname.split("/");
+        const importId = pathParts[pathParts.length - 1];
+
+        try {
+            const resp = await fetch("/api/historico/" + importId);
+            if (!resp.ok) {
+                document.getElementById("detail-meta").innerHTML = "<p>Importacao nao encontrada.</p>";
+                return;
+            }
+            const data = await resp.json();
+            const imp = data.importacao;
+
+            const ts = imp.timestamp ? new Date(imp.timestamp).toLocaleString("pt-BR") : "-";
+            const statusClass = imp.status === "sucesso" ? "status-ok" :
+                               imp.status === "parcial" ? "status-warn" : "status-error";
+            const statusIcon = imp.status === "sucesso" ? "&#10003;" :
+                              imp.status === "parcial" ? "!" : "&#10007;";
+
+            document.getElementById("detail-meta").innerHTML =
+                "<dt>Data/Hora</dt><dd>" + ts + "</dd>" +
+                "<dt>Arquivo</dt><dd>" + (imp.filename || "-") + "</dd>" +
+                "<dt>Comprovantes</dt><dd>" + (imp.comprovante_nums || "-") + "</dd>" +
+                "<dt>Bolsas</dt><dd>" + imp.bolsa_count + "</dd>" +
+                "<dt>Status</dt><dd><span class='" + statusClass + "'>" + statusIcon + " " + imp.status + "</span></dd>";
+
+            if (imp.error_message) {
+                const errEl = document.getElementById("detail-error");
+                errEl.textContent = imp.error_message;
+                errEl.classList.remove("hidden");
+            }
+
+            const tbody = document.getElementById("bolsas-body");
+            data.bolsas.forEach(b => {
+                const tr = document.createElement("tr");
+                tr.innerHTML =
+                    "<td>" + b.num_bolsa + "</td>" +
+                    "<td>" + b.tipo_hemocomponente + "</td>" +
+                    "<td>" + b.gs_rh + "</td>" +
+                    "<td>" + b.volume + "</td>" +
+                    "<td>" + b.data_validade + "</td>";
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            document.getElementById("detail-meta").innerHTML = "<p>Erro ao carregar dados.</p>";
+        }
+    });
+    </script>
+{% endblock %}

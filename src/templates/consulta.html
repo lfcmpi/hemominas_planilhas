@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Consulta de Dados - Hemominas{% endblock %}
+
+{% block content %}
+<div class="consulta-header">
+    <div>
+        <h1>Consulta de Dados</h1>
+        <p class="subtitle">Dados sincronizados da planilha MAPA DE TRANSFUSAO</p>
+    </div>
+    <div class="consulta-header-actions">
+        <span class="sync-badge" id="sync-badge">Sem sync</span>
+        <button class="btn btn-primary btn-sm sync-btn" id="btn-sync" onclick="sincronizar()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sync-icon">
+                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Sincronizar
+        </button>
+    </div>
+</div>
+
+<div class="consulta-filters">
+    <div class="consulta-search-wrap">
+        <input type="text" id="search-input" class="consulta-search" placeholder="Buscar por bolsa, tipo, destino...">
+    </div>
+    <select id="filter-gs-rh" class="consulta-select">
+        <option value="">GS/RH (Todos)</option>
+    </select>
+    <select id="filter-tipo" class="consulta-select">
+        <option value="">Hemocomponente (Todos)</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportarCSV()">Exportar CSV</button>
+</div>
+
+<div class="table-container consulta-table-wrap" data-can-edit="{{ 'true' if can_edit else 'false' }}">
+    <table class="consulta-table" id="consulta-table">
+        <thead>
+            <tr>
+                <th class="sortable" data-col="status_vencimento">Status</th>
+                <th class="sortable" data-col="data_entrada">Entrada</th>
+                <th class="sortable" data-col="data_validade">Validade</th>
+                <th class="sortable" data-col="dias_antes_vencimento">Dias Venc.</th>
+                <th class="sortable" data-col="data_transfusao">Transfusao</th>
+                <th class="sortable" data-col="destino">Destino</th>
+                <th class="sortable" data-col="nome_paciente">Paciente</th>
+                <th class="sortable" data-col="tipo_hemocomponente">Hemocomp.</th>
+                <th class="sortable" data-col="gs_rh">GS/RH</th>
+                <th class="sortable" data-col="volume">Volume</th>
+                <th class="sortable" data-col="responsavel_recepcao">Responsavel</th>
+                <th class="sortable" data-col="setor_transfusao">Setor</th>
+                <th class="sortable" data-col="num_bolsa">Num Bolsa</th>
+                <th class="sortable" data-col="prontuario_salus">Pront. SALUS</th>
+                <th class="sortable" data-col="prontuario_mv">Pront. MV</th>
+                <th class="sortable" data-col="sus_laudo">SUS/Laudo</th>
+                <th class="sortable" data-col="reacao_transfusional">Reacao</th>
+                <th class="sortable" data-col="bolsa_sbs">Bolsa SBS</th>
+            </tr>
+        </thead>
+        <tbody id="consulta-tbody">
+        </tbody>
+    </table>
+</div>
+
+<div class="consulta-pagination" id="pagination-area">
+    <div class="consulta-pagination-info" id="pagination-info">Carregando...</div>
+    <div class="consulta-pagination-controls">
+        <select id="per-page-select" class="consulta-select">
+            <option value="10">10 por pagina</option>
+            <option value="25" selected>25 por pagina</option>
+            <option value="50">50 por pagina</option>
+            <option value="100">100 por pagina</option>
+        </select>
+        <div class="consulta-pagination-btns" id="pagination-btns"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/consulta.js"></script>
+{% endblock %}

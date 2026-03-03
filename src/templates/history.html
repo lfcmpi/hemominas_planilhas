@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Historico - Hemominas Sheets{% endblock %}
+
+{% block content %}
+        <div class="page-header">
+            <h1>Historico de Importacoes</h1>
+            <p>Registro de todas as importacoes realizadas</p>
+        </div>
+
+        <div class="history-filters">
+            <label>Data inicio
+                <input type="date" id="filter-inicio">
+            </label>
+            <label>Data fim
+                <input type="date" id="filter-fim">
+            </label>
+            <button type="button" id="btn-filter" class="btn btn-primary">Filtrar</button>
+            <button type="button" id="btn-clear-filter" class="btn btn-secondary">Limpar</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Arquivo</th>
+                        <th>Comprovantes</th>
+                        <th>Bolsas</th>
+                        <th class="col-status">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
+
+        <div class="history-pagination">
+            <span id="pagination-info"></span>
+            <div>
+                <button type="button" id="btn-prev" class="btn btn-secondary" disabled>Anterior</button>
+                <button type="button" id="btn-next" class="btn btn-secondary" disabled>Proxima</button>
+            </div>
+        </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/history.js"></script>
+{% endblock %}

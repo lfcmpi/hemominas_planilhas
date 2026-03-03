@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Configuracoes - Hemominas Sheets{% endblock %}
+
+{% block content %}
+        <div class="page-header">
+            <h1>Configuracoes</h1>
+            <p>Gerencie as configuracoes da aplicacao</p>
+        </div>
+
+        <!-- Secao 1: Google Sheets -->
+        <div class="settings-section">
+            <h3>Google Sheets</h3>
+            <div class="settings-row">
+                <label for="cfg-google-sheets-id">ID da Planilha</label>
+                <input type="text" id="cfg-google-sheets-id" placeholder="Ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" style="flex:1">
+            </div>
+            <div class="settings-row settings-file-row">
+                <label>Credenciais JSON</label>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex:1">
+                    <input type="file" id="cfg-credentials-file" accept=".json">
+                    <span class="badge" id="cfg-credentials-badge" style="display:none"></span>
+                </div>
+            </div>
+            <div class="settings-row" style="margin-top:0.5rem">
+                <button type="button" id="btn-upload-credentials" class="btn btn-secondary btn-sm">Upload Credenciais</button>
+                <button type="button" id="btn-testar-sheets" class="btn btn-secondary btn-sm">Testar Conexao</button>
+            </div>
+            <div id="sheets-result" class="settings-connection-result hidden"></div>
+        </div>
+
+        <!-- Secao 2: Estrutura da Planilha -->
+        <div class="settings-section">
+            <h3>Estrutura da Planilha</h3>
+            <div class="settings-row">
+                <label for="cfg-sheet-tab-name">Nome aba principal</label>
+                <input type="text" id="cfg-sheet-tab-name" value="MAPA DE TRANSFUSAO" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-base-tab-name">Nome aba BASE</label>
+                <input type="text" id="cfg-base-tab-name" value="BASE" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-sheet-header-row">Linha cabecalho</label>
+                <input type="number" id="cfg-sheet-header-row" min="1" max="100" value="10">
+            </div>
+            <div class="settings-grid-2col">
+                <div class="settings-row">
+                    <label for="cfg-base-gs-rh-range">Range GS/RH</label>
+                    <input type="text" id="cfg-base-gs-rh-range" value="A15:A24" style="flex:1">
+                </div>
+                <div class="settings-row">
+                    <label for="cfg-base-tipos-range">Range Hemocomponentes</label>
+                    <input type="text" id="cfg-base-tipos-range" value="A48:A70" style="flex:1">
+                </div>
+                <div class="settings-row">
+                    <label for="cfg-base-responsaveis-range">Range Responsaveis</label>
+                    <input type="text" id="cfg-base-responsaveis-range" value="A107:A136" style="flex:1">
+                </div>
+                <div class="settings-row">
+                    <label for="cfg-base-destinos-range">Range Destinos</label>
+                    <input type="text" id="cfg-base-destinos-range" value="A1:A13" style="flex:1">
+                </div>
+                <div class="settings-row">
+                    <label for="cfg-base-reacao-range">Range Reacao Transfusional</label>
+                    <input type="text" id="cfg-base-reacao-range" value="A29:A44" style="flex:1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Secao 3: Email / SMTP -->
+        <div class="settings-section">
+            <h3>Email / SMTP</h3>
+            <div class="settings-row">
+                <input type="checkbox" id="cfg-smtp-enabled">
+                <label for="cfg-smtp-enabled">SMTP ativado</label>
+            </div>
+            <div class="settings-row">
+                <label for="cfg-smtp-host">Servidor</label>
+                <input type="text" id="cfg-smtp-host" placeholder="smtp.gmail.com" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-smtp-port">Porta</label>
+                <input type="number" id="cfg-smtp-port" min="1" max="65535" value="587">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-smtp-user">Usuario</label>
+                <input type="text" id="cfg-smtp-user" placeholder="email@exemplo.com" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-smtp-password">Senha</label>
+                <input type="password" id="cfg-smtp-password" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-smtp-from">Remetente</label>
+                <input type="text" id="cfg-smtp-from" placeholder="noreply@exemplo.com" style="flex:1">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-alert-email-to">Destinatario</label>
+                <input type="text" id="cfg-alert-email-to" placeholder="admin@exemplo.com" style="flex:1">
+            </div>
+            <div class="settings-row" style="margin-top:0.5rem">
+                <button type="button" id="btn-testar-smtp" class="btn btn-secondary btn-sm">Testar Email</button>
+            </div>
+        </div>
+
+        <!-- Secao 4: Agendamento -->
+        <div class="settings-section">
+            <h3>Agendamento</h3>
+            <div class="settings-row">
+                <input type="checkbox" id="cfg-scheduler-enabled">
+                <label for="cfg-scheduler-enabled">Scheduler ativado</label>
+            </div>
+            <div class="settings-row">
+                <label for="cfg-scheduler-alert-hour">Hora do alerta</label>
+                <input type="number" id="cfg-scheduler-alert-hour" min="0" max="23" value="8">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-scheduler-alert-minute">Minuto</label>
+                <input type="number" id="cfg-scheduler-alert-minute" min="0" max="59" value="0">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-sync-interval-minutes">Intervalo sync (min)</label>
+                <input type="number" id="cfg-sync-interval-minutes" min="1" max="1440" value="30">
+            </div>
+        </div>
+
+        <!-- Secao 5: Aplicacao -->
+        <div class="settings-section">
+            <h3>Aplicacao</h3>
+            <div class="settings-row">
+                <label for="cfg-cache-ttl-seconds">Cache TTL (segundos)</label>
+                <input type="number" id="cfg-cache-ttl-seconds" min="0" max="86400" value="300">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-session-lifetime-minutes">Tempo sessao (minutos)</label>
+                <input type="number" id="cfg-session-lifetime-minutes" min="1" max="10080" value="480">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-max-batch-files">Max arquivos lote</label>
+                <input type="number" id="cfg-max-batch-files" min="1" max="100" value="10">
+            </div>
+            <div class="settings-row">
+                <label for="cfg-max-upload-size-mb">Max upload (MB)</label>
+                <input type="number" id="cfg-max-upload-size-mb" min="1" max="100" value="10">
+            </div>
+        </div>
+
+        <!-- Botao Salvar -->
+        <div class="settings-actions">
+            <button type="button" id="btn-save-config" class="btn btn-primary">Salvar</button>
+        </div>
+
+        <div id="config-feedback" class="settings-feedback hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/configuracoes.js"></script>
+{% endblock %}

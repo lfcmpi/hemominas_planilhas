@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Configuracao de Alertas - Hemominas Sheets{% endblock %}
+
+{% block content %}
+        <div class="page-header">
+            <a href="/dashboard" class="btn btn-secondary" style="margin-bottom:1rem;display:inline-block">&larr; Dashboard</a>
+            <h1>Configuracao de Alertas</h1>
+        </div>
+
+        <div class="settings-section">
+            <h3>Prazos de Alerta</h3>
+            <div class="settings-row">
+                <label for="threshold-urgente" style="color:#dc2626">Urgente (dias)</label>
+                <input type="number" id="threshold-urgente" min="1" max="90" value="7">
+            </div>
+            <div class="settings-row">
+                <label for="threshold-atencao" style="color:#d97706">Atencao (dias)</label>
+                <input type="number" id="threshold-atencao" min="1" max="180" value="14">
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Notificacoes</h3>
+            <div class="settings-row">
+                <input type="checkbox" id="inapp-enabled" checked>
+                <label for="inapp-enabled">Alerta no app (ao abrir)</label>
+            </div>
+            <div class="settings-row">
+                <input type="checkbox" id="email-enabled">
+                <label for="email-enabled">Email diario</label>
+                <input type="email" id="email-to" placeholder="email@exemplo.com" style="flex:1">
+            </div>
+            <div class="settings-row" style="margin-top:0.5rem">
+                <button type="button" id="btn-test-email" class="btn btn-secondary" disabled>Testar Email</button>
+            </div>
+        </div>
+
+        <div class="settings-actions">
+            <button type="button" id="btn-save" class="btn btn-primary">Salvar</button>
+        </div>
+
+        <div id="feedback" class="settings-feedback hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/alert_settings.js"></script>
+{% endblock %}

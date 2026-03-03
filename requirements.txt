@@ -1,0 +1,16 @@
+flask>=3.0
+pdfplumber>=0.11
+pytesseract>=0.3
+pdf2image>=1.17
+gspread>=6.0
+google-auth>=2.0
+google-auth-oauthlib>=1.0
+python-dotenv>=1.0
+pytest>=8.0
+
+# Phase 3
+APScheduler>=3.10
+
+# Phase 4: Auth
+flask-login>=0.6
+bcrypt>=4.0

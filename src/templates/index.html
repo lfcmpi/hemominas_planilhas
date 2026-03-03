@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Upload - Hemominas Sheets{% endblock %}
+
+{% block content %}
+        <header>
+            <h1>Banco de Sangue HMOB</h1>
+            <p class="subtitle">Importar Comprovante de Expedicao &rarr; Mapa de Transfusao</p>
+        </header>
+
+        <!-- Screen 1: Upload -->
+        <div id="screen-upload" class="screen active">
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p>Arraste PDFs aqui ou</p>
+                    <button type="button" id="btn-select" class="btn btn-secondary">Selecionar arquivos</button>
+                    <p class="drop-hint">Ate 10 arquivos PDF simultaneamente</p>
+                </div>
+                <input type="file" id="file-input" accept=".pdf" multiple hidden>
+            </div>
+            <div id="file-list" class="file-list hidden"></div>
+            <div id="file-counter" class="file-counter hidden">
+                <span id="file-count-text"></span>
+            </div>
+            <button type="button" id="btn-process" class="btn btn-primary hidden">Processar Todos</button>
+        </div>
+
+        <!-- Screen 2: Processing -->
+        <div id="screen-processing" class="screen">
+            <div class="processing">
+                <div class="spinner"></div>
+                <p id="processing-step">Processando PDFs...</p>
+                <div id="batch-progress" class="batch-progress hidden">
+                    <div id="batch-progress-bar" class="progress-bar">
+                        <div id="batch-progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div id="batch-file-statuses" class="batch-file-statuses"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Preview & Review -->
+        <div id="screen-results" class="screen">
+            <div id="offline-banner" class="offline-banner hidden">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 1l22 22"/>
+                    <path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/>
+                    <path d="M5 12.55a10.94 10.94 0 015.17-2.39"/>
+                    <path d="M10.71 5.05A16 16 0 0122.56 9"/>
+                    <path d="M1.42 9a15.91 15.91 0 014.7-2.88"/>
+                    <path d="M8.53 16.11a6 6 0 016.95 0"/>
+                    <line x1="12" y1="20" x2="12.01" y2="20"/>
+                </svg>
+                <span>Planilha offline &mdash; validacao usando dados locais</span>
+            </div>
+            <div class="preview-header">
+                <h2>Revisar Dados</h2>
+                <div class="preview-badges">
+                    <span class="badge badge-info" id="badge-files"></span>
+                    <span class="badge badge-info" id="badge-comprovantes"></span>
+                    <span class="badge badge-info" id="badge-bolsas"></span>
+                    <span class="badge badge-dup hidden" id="badge-duplicatas"></span>
+                    <span class="badge badge-err hidden" id="badge-erros"></span>
+                    <span class="badge badge-warn hidden" id="badge-warnings"></span>
+                </div>
+                <p id="results-summary"></p>
+            </div>
+            <!-- Batch file summary -->
+            <div id="batch-summary" class="batch-summary hidden"></div>
+            <div id="preview-blocker" class="preview-blocker hidden">
+                <span id="blocker-msg"></span>
+            </div>
+            <div class="table-container">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th class="col-check"><input type="checkbox" id="select-all" checked></th>
+                            <th>Data Ent.</th>
+                            <th>Validade</th>
+                            <th>Tipo Hemocomp.</th>
+                            <th>GS/RH</th>
+                            <th>Vol.</th>
+                            <th>N. Bolsa</th>
+                            <th class="col-status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body"></tbody>
+                </table>
+            </div>
+            <!-- Inline Editor (hidden by default) -->
+            <div id="inline-editor" class="inline-editor hidden">
+                <h3>Editar Bolsa <span id="edit-bolsa-num"></span></h3>
+                <div class="edit-fields">
+                    <label>Tipo Hemocomponente
+                        <select id="edit-tipo"></select>
+                    </label>
+                    <label>GS/RH
+                        <select id="edit-gs-rh"></select>
+                    </label>
+                    <label>Volume (mL)
+                        <input type="number" id="edit-volume" min="1" max="999">
+                    </label>
+                </div>
+                <div class="edit-actions">
+                    <button type="button" id="edit-cancel" class="btn btn-secondary">Cancelar</button>
+                    <button type="button" id="edit-save" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+            <div class="results-actions">
+                <button type="button" id="btn-cancel" class="btn btn-secondary">Cancelar</button>
+                <button type="button" id="btn-send" class="btn btn-primary">Confirmar e Enviar</button>
+            </div>
+        </div>
+
+        <!-- Screen 4: Success -->
+        <div id="screen-success" class="screen">
+            <div class="success">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <h2>Importacao Concluida!</h2>
+                <p id="success-message"></p>
+                <button type="button" id="btn-new" class="btn btn-primary">Novo Lote</button>
+            </div>
+        </div>
+
+        <!-- Error display -->
+        <div id="error-bar" class="error-bar hidden">
+            <span id="error-message"></span>
+            <button type="button" id="btn-error-close" class="btn-icon">&times;</button>
+        </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/app.js"></script>
+{% endblock %}
