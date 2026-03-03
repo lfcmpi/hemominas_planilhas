@@ -9,7 +9,6 @@
 
         <div id="detail-card" class="detail-card">
             <dl class="detail-meta" id="detail-meta"></dl>
-            <div id="detail-error" class="detail-error hidden"></div>
         </div>
 
         <h2 style="font-size:1.1rem;margin-bottom:0.75rem">Bolsas Importadas</h2>
@@ -50,18 +49,18 @@
             const statusIcon = imp.status === "sucesso" ? "&#10003;" :
                               imp.status === "parcial" ? "!" : "&#10007;";
 
+            let statusHtml = "<span class='" + statusClass + "'>" + statusIcon + " " + imp.status + "</span>";
+            if (imp.status !== "sucesso" && imp.error_message) {
+                statusHtml += "<br><small style='color:#991b1b;font-weight:400'>" +
+                    imp.error_message + "</small>";
+            }
+
             document.getElementById("detail-meta").innerHTML =
                 "<dt>Data/Hora</dt><dd>" + ts + "</dd>" +
                 "<dt>Arquivo</dt><dd>" + (imp.filename || "-") + "</dd>" +
                 "<dt>Comprovantes</dt><dd>" + (imp.comprovante_nums || "-") + "</dd>" +
                 "<dt>Bolsas</dt><dd>" + imp.bolsa_count + "</dd>" +
-                "<dt>Status</dt><dd><span class='" + statusClass + "'>" + statusIcon + " " + imp.status + "</span></dd>";
-
-            if (imp.error_message) {
-                const errEl = document.getElementById("detail-error");
-                errEl.textContent = imp.error_message;
-                errEl.classList.remove("hidden");
-            }
+                "<dt>Status</dt><dd>" + statusHtml + "</dd>";
 
             const tbody = document.getElementById("bolsas-body");
             data.bolsas.forEach(b => {
