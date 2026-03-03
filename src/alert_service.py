@@ -12,6 +12,7 @@ def verificar_vencimentos(dashboard_service, header, data_rows):
     resumo = dashboard_service.obter_estoque(header, data_rows)
 
     return {
+        "vencidas": resumo.vencidas,
         "urgente": resumo.vencendo_7d,
         "atencao": resumo.vencendo_14d,
     }
@@ -31,17 +32,19 @@ def executar_alerta(dashboard_service, header, data_rows, email_sender=None):
         config["email_enabled"]
         and config.get("email_to")
         and email_sender is not None
-        and (vencimentos["urgente"] or vencimentos["atencao"])
+        and (vencimentos["vencidas"] or vencimentos["urgente"] or vencimentos["atencao"])
     ):
         try:
             email_sender.enviar_alerta_email(
-                config, vencimentos["urgente"], vencimentos["atencao"]
+                config, vencimentos["urgente"], vencimentos["atencao"],
+                vencidas=vencimentos["vencidas"],
             )
             email_enviado = True
         except Exception:
             email_enviado = False
 
     return {
+        "vencidas": vencimentos["vencidas"],
         "urgente": vencimentos["urgente"],
         "atencao": vencimentos["atencao"],
         "email_enviado": email_enviado,

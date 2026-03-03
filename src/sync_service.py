@@ -464,18 +464,24 @@ def consultar_planilha(db_path: str, page: int = 1, per_page: int = 25,
                 where_clauses.append(f"{col} = ?")
                 params.append(val)
 
-        # Range filter: dias_vencimento_max (bags expiring within N days)
-        dias_max = filters.get("dias_vencimento_max")
-        if dias_max is not None:
-            try:
-                dias_max_int = int(dias_max)
-                where_clauses.append(
-                    "CAST(dias_antes_vencimento AS INTEGER) >= 0 "
-                    "AND CAST(dias_antes_vencimento AS INTEGER) <= ?"
-                )
-                params.append(dias_max_int)
-            except (ValueError, TypeError):
-                pass
+        # Filter: vencidas (expired bags, dias < 0)
+        if filters.get("vencidas"):
+            where_clauses.append(
+                "CAST(dias_antes_vencimento AS INTEGER) < 0"
+            )
+        else:
+            # Range filter: dias_vencimento_max (bags expiring within N days)
+            dias_max = filters.get("dias_vencimento_max")
+            if dias_max is not None:
+                try:
+                    dias_max_int = int(dias_max)
+                    where_clauses.append(
+                        "CAST(dias_antes_vencimento AS INTEGER) >= 0 "
+                        "AND CAST(dias_antes_vencimento AS INTEGER) <= ?"
+                    )
+                    params.append(dias_max_int)
+                except (ValueError, TypeError):
+                    pass
 
     where_sql = ""
     if where_clauses:

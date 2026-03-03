@@ -7,13 +7,13 @@ from email.mime.text import MIMEText
 from src.config import SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_USER
 
 
-def enviar_alerta_email(config, bolsas_urgente, bolsas_atencao):
+def enviar_alerta_email(config, bolsas_urgente, bolsas_atencao, vencidas=None):
     """Compoe e envia email HTML com alertas de vencimento."""
     email_to = config.get("email_to", "")
     if not email_to:
         return
 
-    html = _compor_email_html(bolsas_urgente, bolsas_atencao)
+    html = _compor_email_html(bolsas_urgente, bolsas_atencao, vencidas=vencidas)
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = "Alerta de Vencimento - Banco de Sangue HMOB"
@@ -52,13 +52,44 @@ def _enviar_smtp(msg, to):
         server.quit()
 
 
-def _compor_email_html(bolsas_urgente, bolsas_atencao):
+def _compor_email_html(bolsas_urgente, bolsas_atencao, vencidas=None):
     """Compoe HTML do email de alerta."""
     html = """
     <html>
     <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
     <h2 style="color:#333">Alerta de Vencimento - Banco de Sangue HMOB</h2>
     """
+
+    if vencidas:
+        html += """
+        <div style="background:#fecaca;border:1px solid #f87171;border-radius:8px;padding:12px;margin-bottom:16px">
+        <h3 style="color:#7f1d1d;margin:0 0 8px">VENCIDAS ({count} bolsas)</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr style="background:#fca5a5">
+            <th style="padding:4px 8px;text-align:left">Bolsa</th>
+            <th style="padding:4px 8px;text-align:left">Tipo</th>
+            <th style="padding:4px 8px;text-align:left">GS/RH</th>
+            <th style="padding:4px 8px;text-align:left">Vencida ha</th>
+        </tr>
+        """.format(count=len(vencidas))
+
+        for b in vencidas:
+            dias_abs = abs(b.get("dias_restantes", 0))
+            html += """
+            <tr>
+                <td style="padding:4px 8px">{num}</td>
+                <td style="padding:4px 8px">{tipo}</td>
+                <td style="padding:4px 8px">{gs}</td>
+                <td style="padding:4px 8px;color:#b91c1c;font-weight:bold">{dias}d</td>
+            </tr>
+            """.format(
+                num=b.get("num_bolsa", ""),
+                tipo=b.get("tipo", ""),
+                gs=b.get("gs_rh", ""),
+                dias=dias_abs,
+            )
+
+        html += "</table></div>"
 
     if bolsas_urgente:
         html += """
@@ -120,7 +151,7 @@ def _compor_email_html(bolsas_urgente, bolsas_atencao):
 
         html += "</table></div>"
 
-    if not bolsas_urgente and not bolsas_atencao:
+    if not vencidas and not bolsas_urgente and not bolsas_atencao:
         html += '<p style="color:#166534">Nenhuma bolsa proxima do vencimento.</p>'
 
     html += """

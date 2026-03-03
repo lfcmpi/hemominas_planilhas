@@ -13,6 +13,7 @@ class EstoqueResumo:
     por_gs_rh: dict = field(default_factory=dict)
     por_hemocomponente: dict = field(default_factory=dict)
     total_em_estoque: int = 0
+    vencidas: list = field(default_factory=list)
     vencendo_7d: list = field(default_factory=list)
     vencendo_14d: list = field(default_factory=list)
     vencendo_30d: list = field(default_factory=list)
@@ -84,7 +85,7 @@ class DashboardService:
         por_gs_rh = {}
         por_hemocomponente = {}
         total_em_estoque = 0
-        vencendo = {7: [], 14: [], 30: []}
+        vencendo = {"vencidas": [], 7: [], 14: [], 30: []}
 
         # Get alert thresholds
         try:
@@ -147,7 +148,9 @@ class DashboardService:
                     "dias_restantes": dias,
                 }
 
-                if dias <= thresh_urgente:
+                if dias < 0:
+                    vencendo["vencidas"].append(bolsa_info)
+                elif dias <= thresh_urgente:
                     vencendo[7].append(bolsa_info)
                 elif dias <= thresh_atencao:
                     vencendo[14].append(bolsa_info)
@@ -162,6 +165,7 @@ class DashboardService:
             por_gs_rh=dict(sorted(por_gs_rh.items(), key=lambda x: x[1], reverse=True)),
             por_hemocomponente=dict(sorted(por_hemocomponente.items(), key=lambda x: x[1], reverse=True)),
             total_em_estoque=total_em_estoque,
+            vencidas=vencendo["vencidas"],
             vencendo_7d=vencendo[7],
             vencendo_14d=vencendo[14],
             vencendo_30d=vencendo[30],

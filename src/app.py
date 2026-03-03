@@ -624,6 +624,10 @@ def api_dashboard():
                 "por_hemocomponente": [{"tipo": k, "count": v} for k, v in resumo.por_hemocomponente.items()],
                 "total_em_estoque": resumo.total_em_estoque,
                 "vencendo": {
+                    "vencidas": {
+                        "count": len(resumo.vencidas),
+                        "bolsas": resumo.vencidas,
+                    },
                     "urgente": {
                         "count": len(resumo.vencendo_7d),
                         "bolsas": resumo.vencendo_7d,
@@ -726,15 +730,16 @@ def api_alertas_pendentes():
     try:
         header, data_rows = ler_planilha_completa(GOOGLE_SHEETS_ID)
         if not header:
-            return jsonify({"urgente": 0, "atencao": 0})
+            return jsonify({"vencidas": 0, "urgente": 0, "atencao": 0})
 
         resumo = dashboard_service.obter_estoque(header, data_rows)
         return jsonify({
+            "vencidas": len(resumo.vencidas),
             "urgente": len(resumo.vencendo_7d),
             "atencao": len(resumo.vencendo_14d),
         })
     except Exception:
-        return jsonify({"urgente": 0, "atencao": 0})
+        return jsonify({"vencidas": 0, "urgente": 0, "atencao": 0})
 
 
 # === CONSULTA & SYNC (Phase 5) — admin, manager, consulta ===
@@ -801,6 +806,11 @@ def api_consulta():
     dias_max = request.args.get("dias_vencimento_max")
     if dias_max is not None:
         filters["dias_vencimento_max"] = dias_max
+
+    # Vencidas filter (expired bags, dias < 0)
+    vencidas = request.args.get("vencidas")
+    if vencidas:
+        filters["vencidas"] = vencidas
 
     result = consultar_planilha(SQLITE_DB_PATH, page, per_page, search, sort_by, sort_dir, filters)
     return jsonify(result)

@@ -54,7 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (estoque) {
       setText("kpi-estoque", estoque.total_em_estoque);
       setText("kpi-estoque-sub", "Tempo real (planilha)");
-      const alertCount = (estoque.vencendo.urgente.count || 0) + (estoque.vencendo.atencao.count || 0);
+      const vencidasCount = estoque.vencendo.vencidas ? (estoque.vencendo.vencidas.count || 0) : 0;
+      const alertCount = vencidasCount + (estoque.vencendo.urgente.count || 0) + (estoque.vencendo.atencao.count || 0);
       setText("kpi-alertas", alertCount);
       const kpiAlertasCard = document.getElementById("kpi-alertas").closest(".kpi-card");
       if (alertCount > 0) {
@@ -65,10 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
           window.location.href = "/consulta?vencimento=atencao&dias_max=" + thresholdAtencao;
         };
       }
-      setText("kpi-alertas-sub",
-        (estoque.vencendo.urgente.count || 0) + " urgente, " +
-        (estoque.vencendo.atencao.count || 0) + " atencao"
-      );
+      const subParts = [];
+      if (vencidasCount > 0) subParts.push(vencidasCount + " vencida(s)");
+      subParts.push((estoque.vencendo.urgente.count || 0) + " urgente");
+      subParts.push((estoque.vencendo.atencao.count || 0) + " atencao");
+      setText("kpi-alertas-sub", subParts.join(", "));
     } else {
       setText("kpi-estoque", "-");
       setText("kpi-estoque-sub", "Planilha indisponivel");
@@ -85,6 +87,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertBanners = document.getElementById("alert-banners");
     alertBanners.innerHTML = "";
     if (estoque) {
+      if (estoque.vencendo.vencidas && estoque.vencendo.vencidas.count > 0) {
+        alertBanners.appendChild(makeBanner(
+          "vencidas",
+          estoque.vencendo.vencidas.count + " bolsa(s) ja vencida(s)",
+          "/consulta?vencimento=vencidas&dias_max=0"
+        ));
+      }
       if (estoque.vencendo.urgente.count > 0) {
         alertBanners.appendChild(makeBanner(
           "urgente",
@@ -143,6 +152,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let hasExpiry = false;
 
     if (estoque) {
+      if (estoque.vencendo.vencidas && estoque.vencendo.vencidas.bolsas && estoque.vencendo.vencidas.bolsas.length > 0) {
+        expirySection.appendChild(renderExpiryGroup(
+          "Vencidas", estoque.vencendo.vencidas.bolsas, "vencidas",
+          "/consulta?vencimento=vencidas&dias_max=0"
+        ));
+        hasExpiry = true;
+      }
       if (estoque.vencendo.urgente.bolsas && estoque.vencendo.urgente.bolsas.length > 0) {
         expirySection.appendChild(renderExpiryGroup(
           "Urgente", estoque.vencendo.urgente.bolsas, "urgente",
@@ -343,8 +359,11 @@ document.addEventListener("DOMContentLoaded", () => {
     bolsas.forEach(b => {
       const item = document.createElement("div");
       item.className = "expiry-item";
+      const diasLabel = b.dias_restantes < 0
+        ? Math.abs(b.dias_restantes) + "d atras"
+        : b.dias_restantes + "d";
       item.innerHTML =
-        '<span class="expiry-days expiry-days-' + level + '">' + b.dias_restantes + 'd</span>' +
+        '<span class="expiry-days expiry-days-' + level + '">' + diasLabel + '</span>' +
         '<span>' + esc(b.num_bolsa) + '</span>' +
         '<span>' + esc(b.tipo) + '</span>' +
         '<span>' + esc(b.gs_rh) + '</span>' +

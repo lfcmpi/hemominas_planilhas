@@ -1219,6 +1219,12 @@ tbody tr {
     margin-left: 1rem;
 }
 
+.alert-banner-vencidas {
+    background: #fecaca;
+    border: 1px solid #f87171;
+    color: #7f1d1d;
+}
+
 .alert-banner-urgente {
     background: #fef2f2;
     border: 1px solid #fecaca;
@@ -1246,6 +1252,11 @@ tbody tr {
     cursor: pointer;
     font-weight: 500;
     font-size: 0.9rem;
+}
+
+.expiry-header-vencidas {
+    background: #fecaca;
+    color: #7f1d1d;
 }
 
 .expiry-header-urgente {
@@ -1277,6 +1288,11 @@ tbody tr {
 .expiry-days {
     font-weight: 600;
     min-width: 60px;
+}
+
+.expiry-days-vencidas {
+    color: #b91c1c;
+    font-weight: 700;
 }
 
 .expiry-days-urgente {
@@ -1312,6 +1328,12 @@ tbody tr {
     font-size: 0.85rem;
     font-weight: 500;
     margin-bottom: 0.75rem;
+}
+
+.vencimento-badge-vencidas {
+    background: #fecaca;
+    border: 1px solid #f87171;
+    color: #7f1d1d;
 }
 
 .vencimento-badge-urgente {

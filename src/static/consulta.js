@@ -465,7 +465,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const vencimento = urlParams.get("vencimento");
     const diasMax = urlParams.get("dias_max");
     if (vencimento && diasMax) {
-        state.filters.dias_vencimento_max = diasMax;
+        if (vencimento === "vencidas") {
+            state.filters.vencidas = "1";
+        } else {
+            state.filters.dias_vencimento_max = diasMax;
+        }
         state.sort_by = "dias_antes_vencimento";
         state.sort_dir = "asc";
         showVencimentoFilter(vencimento, diasMax);
@@ -512,9 +516,14 @@ function showVencimentoFilter(tipo, dias) {
     badge.id = "vencimento-filter-badge";
     badge.className = "vencimento-badge vencimento-badge-" + tipo;
 
-    const label = tipo === "urgente"
-        ? "Vencimento em ate " + dias + " dias (urgente)"
-        : "Vencimento em ate " + dias + " dias (atencao)";
+    let label;
+    if (tipo === "vencidas") {
+        label = "Bolsas ja vencidas";
+    } else if (tipo === "urgente") {
+        label = "Vencimento em ate " + dias + " dias (urgente)";
+    } else {
+        label = "Vencimento em ate " + dias + " dias (atencao)";
+    }
 
     badge.innerHTML =
         '<span>' + label + '</span>' +
@@ -525,6 +534,7 @@ function showVencimentoFilter(tipo, dias) {
 
 function limparVencimento() {
     delete state.filters.dias_vencimento_max;
+    delete state.filters.vencidas;
     state.page = 1;
     const badge = document.getElementById("vencimento-filter-badge");
     if (badge) badge.remove();
