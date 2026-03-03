@@ -455,10 +455,25 @@ document.addEventListener("DOMContentLoaded", () => {
       btnSend.disabled = true;
       btnSend.textContent = "Confirmar e Enviar";
       previewBlocker.classList.remove("hidden");
-      blockerMsg.textContent =
+      // Collect specific error details per row
+      const errorDetails = selectedWithErrors.map((l) => {
+        const criticalErrors = l.erros.filter((e) => e.nivel === "error");
+        const details = criticalErrors
+          .map((e) => {
+            if (e.campo === "gs_rh") return "GS/RH nao compativel (" + escapeHtml(e.valor_atual) + ")";
+            if (e.campo === "tipo_hemocomponente") return "Tipo hemocomponente nao compativel (" + escapeHtml(e.valor_atual) + ")";
+            return escapeHtml(e.mensagem);
+          })
+          .join(", ");
+        return "Bolsa " + escapeHtml(l.num_bolsa) + ": " + details;
+      });
+      blockerMsg.innerHTML =
         "Corrija " +
         selectedWithErrors.length +
-        " erro(s) critico(s) para confirmar";
+        " erro(s) critico(s) para confirmar:<br>" +
+        '<ul style="margin:4px 0 0 0;padding-left:20px;text-align:left">' +
+        errorDetails.map((d) => "<li>" + d + "</li>").join("") +
+        "</ul>";
     } else {
       btnSend.disabled = false;
       btnSend.textContent =
@@ -578,10 +593,21 @@ document.addEventListener("DOMContentLoaded", () => {
       l.erros.some((e) => e.nivel === "error")
     );
     if (withErrors.length > 0) {
+      const errorList = withErrors.map((l) => {
+        const msgs = l.erros
+          .filter((e) => e.nivel === "error")
+          .map((e) => {
+            if (e.campo === "gs_rh") return "GS/RH nao compativel";
+            if (e.campo === "tipo_hemocomponente") return "Tipo hemocomponente nao compativel";
+            return e.mensagem;
+          })
+          .join(", ");
+        return "Bolsa " + l.num_bolsa + ": " + msgs;
+      }).join(" | ");
       showError(
         "Corrija os erros criticos antes de enviar (" +
           withErrors.length +
-          " bolsa(s) com erro)."
+          " bolsa(s) com erro). " + errorList
       );
       return;
     }
