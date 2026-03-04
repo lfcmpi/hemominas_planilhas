@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const editBolsaNum = document.getElementById("edit-bolsa-num");
   const editTipo = document.getElementById("edit-tipo");
   const editGsRh = document.getElementById("edit-gs-rh");
+  const editResponsavel = document.getElementById("edit-responsavel");
   const editVolume = document.getElementById("edit-volume");
   const editCancel = document.getElementById("edit-cancel");
   const editSave = document.getElementById("edit-save");
@@ -347,6 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (data.base_values) {
       populateDropdown(editTipo, data.base_values.tipos_hemocomponente);
       populateDropdown(editGsRh, data.base_values.gs_rh);
+      if (data.base_values.responsaveis) {
+        populateDropdown(editResponsavel, data.base_values.responsaveis);
+      }
     }
 
     // Render table
@@ -517,6 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
     editBolsaNum.textContent = linha.num_bolsa;
     editTipo.value = linha.tipo_hemocomponente;
     editGsRh.value = linha.gs_rh;
+    editResponsavel.value = linha.responsavel || "";
     editVolume.value = linha.volume;
     inlineEditor.classList.remove("hidden");
   }
@@ -532,11 +537,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const linha = extractedData.linhas[editingIndex];
     const newTipo = editTipo.value;
     const newGsRh = editGsRh.value;
+    const newResponsavel = editResponsavel.value;
     const newVolume = parseInt(editVolume.value) || 0;
 
     // Update data
     linha.tipo_hemocomponente = newTipo;
     linha.gs_rh = newGsRh;
+    linha.responsavel = newResponsavel;
     linha.volume = newVolume;
 
     // Revalidate via backend

@@ -11,6 +11,7 @@ const state = {
 
 let debounceTimer = null;
 let canEdit = false;
+let baseValues = null;
 
 // Fields that can be edited inline
 const EDITABLE_FIELDS = [
@@ -21,6 +22,24 @@ const EDITABLE_FIELDS = [
 
 // Fields that require validation against BASE before saving
 const VALIDATE_FIELDS = ["tipo_hemocomponente", "gs_rh"];
+
+// Fields that should use dropdown with BASE values
+const DROPDOWN_FIELDS = {
+    destino: "destinos",
+    responsavel_recepcao: "responsaveis",
+    reacao_transfusional: "reacoes_transfusionais",
+};
+
+/* ========================
+   BASE VALUES (for dropdowns)
+   ======================== */
+
+function carregarBaseValues() {
+    fetch("/api/base-values")
+        .then(r => r.json())
+        .then(data => { baseValues = data; })
+        .catch(() => { baseValues = null; });
+}
 
 /* ========================
    DATA LOADING
@@ -132,33 +151,86 @@ function startEditing(e) {
     td.classList.add("editing");
     td.innerHTML = "";
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = currentValue;
-    input.dataset.originalValue = currentValue;
-    td.appendChild(input);
-    input.focus();
-    input.select();
+    const baseKey = DROPDOWN_FIELDS[field];
+    if (baseKey && baseValues && baseValues[baseKey]) {
+        // Use <select> dropdown for fields with BASE values
+        const select = document.createElement("select");
+        select.dataset.originalValue = currentValue;
 
-    // Save on Enter, cancel on Escape
-    input.addEventListener("keydown", function (ev) {
-        if (ev.key === "Enter") {
-            ev.preventDefault();
-            finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
-        } else if (ev.key === "Escape") {
-            cancelEditing(td, input.dataset.originalValue);
+        // Empty option to clear
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = "";
+        emptyOpt.textContent = "-- Selecione --";
+        select.appendChild(emptyOpt);
+
+        const options = baseValues[baseKey];
+        let currentInList = false;
+        options.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v;
+            opt.textContent = v;
+            if (v === currentValue) currentInList = true;
+            select.appendChild(opt);
+        });
+
+        // If current value not in list, add as special option
+        if (currentValue && !currentInList) {
+            const opt = document.createElement("option");
+            opt.value = currentValue;
+            opt.textContent = currentValue + " (valor atual)";
+            select.appendChild(opt);
         }
-    });
 
-    // Save on blur (click away)
-    input.addEventListener("blur", function () {
-        // Delay to allow keydown to fire first
-        setTimeout(() => {
-            if (td.classList.contains("editing")) {
-                finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
+        select.value = currentValue;
+        td.appendChild(select);
+        select.focus();
+
+        // Save immediately on change
+        select.addEventListener("change", function () {
+            finishEditing(td, numBolsa, field, select.value, select.dataset.originalValue);
+        });
+
+        // Cancel on Escape, save on blur
+        select.addEventListener("keydown", function (ev) {
+            if (ev.key === "Escape") {
+                cancelEditing(td, select.dataset.originalValue);
             }
-        }, 100);
-    });
+        });
+
+        select.addEventListener("blur", function () {
+            setTimeout(() => {
+                if (td.classList.contains("editing")) {
+                    finishEditing(td, numBolsa, field, select.value, select.dataset.originalValue);
+                }
+            }, 100);
+        });
+    } else {
+        // Fallback: text input
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentValue;
+        input.dataset.originalValue = currentValue;
+        td.appendChild(input);
+        input.focus();
+        input.select();
+
+        input.addEventListener("keydown", function (ev) {
+            if (ev.key === "Enter") {
+                ev.preventDefault();
+                finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
+            } else if (ev.key === "Escape") {
+                cancelEditing(td, input.dataset.originalValue);
+            }
+        });
+
+        input.addEventListener("blur", function () {
+            setTimeout(() => {
+                if (td.classList.contains("editing")) {
+                    finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
+                }
+            }, 100);
+        });
+    }
 }
 
 function cancelEditing(td, originalValue) {
@@ -504,6 +576,11 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".consulta-table th.sortable").forEach(th => {
         th.addEventListener("click", () => ordenar(th.dataset.col));
     });
+
+    // Load BASE values for dropdown fields
+    if (canEdit) {
+        carregarBaseValues();
+    }
 
     // Initial load
     carregarDados();

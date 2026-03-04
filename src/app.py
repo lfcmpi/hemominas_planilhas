@@ -268,6 +268,9 @@ def upload_pdf():
             "base_values": {
                 "tipos_hemocomponente": base.tipos_hemocomponente,
                 "gs_rh": base.gs_rh,
+                "responsaveis": base.responsaveis,
+                "destinos": base.destinos,
+                "reacoes_transfusionais": base.reacoes_transfusionais,
             },
             "sheets_online": sheets_online,
         })
@@ -361,6 +364,23 @@ def enviar_planilha():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Erro ao processar envio: {str(e)}"}), 500
+
+
+@app.route("/api/base-values")
+@login_required
+def api_base_values():
+    """Return all BASE tab values for dropdown population."""
+    try:
+        base = ler_valores_base(GOOGLE_SHEETS_ID)
+    except Exception:
+        base = ler_valores_base_local(SQLITE_DB_PATH)
+    return jsonify({
+        "tipos_hemocomponente": base.tipos_hemocomponente,
+        "gs_rh": base.gs_rh,
+        "responsaveis": base.responsaveis,
+        "destinos": base.destinos,
+        "reacoes_transfusionais": base.reacoes_transfusionais,
+    })
 
 
 @app.route("/api/validate-field", methods=["POST"])
@@ -463,6 +483,9 @@ def batch_upload():
             "base_values": {
                 "tipos_hemocomponente": base.tipos_hemocomponente,
                 "gs_rh": base.gs_rh,
+                "responsaveis": base.responsaveis,
+                "destinos": base.destinos,
+                "reacoes_transfusionais": base.reacoes_transfusionais,
             },
             "sheets_online": sheets_online,
         })

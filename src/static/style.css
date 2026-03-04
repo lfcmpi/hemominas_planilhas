@@ -1785,7 +1785,8 @@ tbody tr {
     padding: 0;
 }
 
-.consulta-table td.editing input {
+.consulta-table td.editing input,
+.consulta-table td.editing select {
     width: 100%;
     padding: 0.4rem 0.5rem;
     border: 2px solid var(--color-primary);
