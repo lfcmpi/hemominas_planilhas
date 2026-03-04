@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.env
+tests/
+docs/
+docs_novos/
+insumos/
+planejamento_futuro/
+PRPs/
+*.md

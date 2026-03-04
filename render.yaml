@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hob-bolsas-sangue
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_SHEETS_ID
+        sync: false
+      - key: GOOGLE_CREDENTIALS_PATH
+        value: cred/account.json
+      - key: SQLITE_DB_PATH
+        value: data/historico.db
+      - key: SMTP_ENABLED
+        value: "false"
+      - key: SCHEDULER_ENABLED
+        value: "false"
