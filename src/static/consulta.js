@@ -89,25 +89,33 @@ function renderTabela(rows) {
         "sus_laudo", "reacao_transfusional", "bolsa_sbs"
     ];
 
-    tbody.innerHTML = rows.map(r => {
+    // Store rows data for modal access
+    state._rows = rows;
+
+    tbody.innerHTML = rows.map((r, idx) => {
         const statusClass = getStatusClass(r.status_vencimento);
         const numBolsa = esc(r.num_bolsa || "");
 
-        return `<tr data-num-bolsa="${numBolsa}">` + columns.map(col => {
+        return `<tr data-num-bolsa="${numBolsa}" data-row-idx="${idx}">` + columns.map(col => {
             const val = col === "volume" ? (r[col] != null ? r[col] : "-") : esc(r[col] || "-");
-            const isEditable = canEdit && EDITABLE_FIELDS.includes(col);
-            const editClass = isEditable ? ' class="editable" data-field="' + col + '"' : '';
 
             if (col === "status_vencimento") {
                 return `<td><span class="${statusClass}">${val}</span></td>`;
             }
-            return `<td${editClass}>${val}</td>`;
+            return `<td>${val}</td>`;
         }).join("") + `</tr>`;
     }).join("");
 
-    // Attach double-click handlers for editable cells
+    // Attach double-click on rows for modal
     if (canEdit) {
-        attachEditHandlers();
+        tbody.querySelectorAll("tr[data-row-idx]").forEach(tr => {
+            tr.addEventListener("dblclick", function () {
+                const idx = parseInt(tr.dataset.rowIdx);
+                if (state._rows && state._rows[idx]) {
+                    abrirModal(state._rows[idx]);
+                }
+            });
+        });
     }
 }
 
@@ -130,130 +138,194 @@ function esc(str) {
 }
 
 /* ========================
-   INLINE EDITING
+   MODAL EDITING
    ======================== */
 
-function attachEditHandlers() {
-    document.querySelectorAll(".consulta-table td.editable").forEach(td => {
-        td.addEventListener("dblclick", startEditing);
-    });
-}
+const MODAL_FIELD_LABELS = {
+    status_vencimento: "Status",
+    data_entrada: "Entrada",
+    data_validade: "Validade",
+    dias_antes_vencimento: "Dias Venc.",
+    data_transfusao: "Transfusao",
+    destino: "Destino",
+    nome_paciente: "Paciente",
+    tipo_hemocomponente: "Hemocomponente",
+    gs_rh: "GS/RH",
+    volume: "Volume",
+    responsavel_recepcao: "Responsavel",
+    setor_transfusao: "Setor",
+    num_bolsa: "Num Bolsa",
+    prontuario_salus: "Pront. SALUS",
+    prontuario_mv: "Pront. MV",
+    sus_laudo: "SUS/Laudo",
+    reacao_transfusional: "Reacao",
+    bolsa_sbs: "Bolsa SBS",
+};
 
-function startEditing(e) {
-    const td = e.currentTarget;
-    if (td.classList.contains("editing")) return;
+const MODAL_COLUMNS = [
+    "status_vencimento", "data_entrada", "data_validade",
+    "dias_antes_vencimento", "data_transfusao", "destino",
+    "nome_paciente", "tipo_hemocomponente", "gs_rh",
+    "volume", "responsavel_recepcao", "setor_transfusao",
+    "num_bolsa", "prontuario_salus", "prontuario_mv",
+    "sus_laudo", "reacao_transfusional", "bolsa_sbs"
+];
 
-    const field = td.dataset.field;
-    const row = td.closest("tr");
-    const numBolsa = row.dataset.numBolsa;
-    const currentValue = td.textContent === "-" ? "" : td.textContent;
+let modalRowData = null;
+let modalOriginalValues = {};
 
-    td.classList.add("editing");
-    td.innerHTML = "";
+function abrirModal(row) {
+    modalRowData = row;
+    modalOriginalValues = {};
 
-    const baseKey = DROPDOWN_FIELDS[field];
-    if (baseKey && baseValues && baseValues[baseKey]) {
-        // Use <select> dropdown for fields with BASE values
-        const select = document.createElement("select");
-        select.dataset.originalValue = currentValue;
+    const overlay = document.getElementById("row-modal");
+    const fieldsContainer = document.getElementById("modal-fields");
+    const numBolsaSpan = document.getElementById("modal-num-bolsa");
 
-        // Empty option to clear
-        const emptyOpt = document.createElement("option");
-        emptyOpt.value = "";
-        emptyOpt.textContent = "-- Selecione --";
-        select.appendChild(emptyOpt);
+    numBolsaSpan.textContent = row.num_bolsa || "";
 
-        const options = baseValues[baseKey];
-        let currentInList = false;
-        options.forEach(v => {
-            const opt = document.createElement("option");
-            opt.value = v;
-            opt.textContent = v;
-            if (v === currentValue) currentInList = true;
-            select.appendChild(opt);
-        });
+    fieldsContainer.innerHTML = MODAL_COLUMNS.map(col => {
+        const label = MODAL_FIELD_LABELS[col] || col;
+        const val = row[col] != null ? String(row[col]) : "";
+        const displayVal = val || "-";
+        const isEditable = EDITABLE_FIELDS.includes(col);
+        const fieldClass = isEditable ? "row-modal-field editable" : "row-modal-field readonly";
 
-        // If current value not in list, add as special option
-        if (currentValue && !currentInList) {
-            const opt = document.createElement("option");
-            opt.value = currentValue;
-            opt.textContent = currentValue + " (valor atual)";
-            select.appendChild(opt);
+        if (isEditable) {
+            modalOriginalValues[col] = val;
+            const baseKey = DROPDOWN_FIELDS[col];
+            if (baseKey && baseValues && baseValues[baseKey]) {
+                // Select dropdown
+                const options = baseValues[baseKey];
+                let optionsHtml = '<option value="">-- Selecione --</option>';
+                let currentInList = false;
+                options.forEach(v => {
+                    const selected = v === val ? " selected" : "";
+                    if (v === val) currentInList = true;
+                    optionsHtml += `<option value="${esc(v)}"${selected}>${esc(v)}</option>`;
+                });
+                if (val && !currentInList) {
+                    optionsHtml += `<option value="${esc(val)}" selected>${esc(val)} (valor atual)</option>`;
+                }
+                return `<div class="${fieldClass}">
+                    <label>${esc(label)}</label>
+                    <select data-field="${col}" disabled>${optionsHtml}</select>
+                </div>`;
+            } else {
+                // Text input
+                return `<div class="${fieldClass}">
+                    <label>${esc(label)}</label>
+                    <input type="text" data-field="${col}" value="${esc(val)}" disabled>
+                </div>`;
+            }
+        } else {
+            return `<div class="${fieldClass}">
+                <label>${esc(label)}</label>
+                <span class="modal-value">${esc(displayVal)}</span>
+            </div>`;
         }
+    }).join("");
 
-        select.value = currentValue;
-        td.appendChild(select);
-        select.focus();
+    // Reset buttons
+    document.getElementById("modal-btn-editar").classList.remove("hidden");
+    document.getElementById("modal-btn-salvar").classList.add("hidden");
 
-        // Save immediately on change
-        select.addEventListener("change", function () {
-            finishEditing(td, numBolsa, field, select.value, select.dataset.originalValue);
-        });
+    overlay.classList.remove("hidden");
 
-        // Cancel on Escape, save on blur
-        select.addEventListener("keydown", function (ev) {
-            if (ev.key === "Escape") {
-                cancelEditing(td, select.dataset.originalValue);
-            }
-        });
-
-        select.addEventListener("blur", function () {
-            setTimeout(() => {
-                if (td.classList.contains("editing")) {
-                    finishEditing(td, numBolsa, field, select.value, select.dataset.originalValue);
-                }
-            }, 100);
-        });
-    } else {
-        // Fallback: text input
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = currentValue;
-        input.dataset.originalValue = currentValue;
-        td.appendChild(input);
-        input.focus();
-        input.select();
-
-        input.addEventListener("keydown", function (ev) {
-            if (ev.key === "Enter") {
-                ev.preventDefault();
-                finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
-            } else if (ev.key === "Escape") {
-                cancelEditing(td, input.dataset.originalValue);
-            }
-        });
-
-        input.addEventListener("blur", function () {
-            setTimeout(() => {
-                if (td.classList.contains("editing")) {
-                    finishEditing(td, numBolsa, field, input.value, input.dataset.originalValue);
-                }
-            }, 100);
-        });
-    }
+    // Close on Escape
+    document.addEventListener("keydown", modalEscHandler);
 }
 
-function cancelEditing(td, originalValue) {
-    td.classList.remove("editing");
-    td.textContent = originalValue || "-";
+function modalEscHandler(e) {
+    if (e.key === "Escape") fecharModal();
 }
 
-function finishEditing(td, numBolsa, field, newValue, originalValue) {
-    td.classList.remove("editing");
+function fecharModal() {
+    const overlay = document.getElementById("row-modal");
+    overlay.classList.add("hidden");
+    modalRowData = null;
+    modalOriginalValues = {};
+    document.removeEventListener("keydown", modalEscHandler);
+}
 
-    // If value didn't change, just restore
-    if (newValue === originalValue) {
-        td.textContent = newValue || "-";
+function habilitarEdicao() {
+    const fieldsContainer = document.getElementById("modal-fields");
+    fieldsContainer.querySelectorAll(".row-modal-field.editable input, .row-modal-field.editable select").forEach(el => {
+        el.disabled = false;
+    });
+
+    document.getElementById("modal-btn-editar").classList.add("hidden");
+    document.getElementById("modal-btn-salvar").classList.remove("hidden");
+}
+
+function salvarModal() {
+    if (!modalRowData) return;
+
+    const numBolsa = modalRowData.num_bolsa;
+    const fieldsContainer = document.getElementById("modal-fields");
+    const editableEls = fieldsContainer.querySelectorAll(".row-modal-field.editable input, .row-modal-field.editable select");
+
+    const changes = [];
+    editableEls.forEach(el => {
+        const field = el.dataset.field;
+        const newVal = el.value;
+        const origVal = modalOriginalValues[field] || "";
+        if (newVal !== origVal) {
+            changes.push({ el, field, value: newVal });
+        }
+    });
+
+    if (changes.length === 0) {
+        fecharModal();
         return;
     }
 
-    td.textContent = newValue || "-";
+    const btnSalvar = document.getElementById("modal-btn-salvar");
+    btnSalvar.disabled = true;
+    btnSalvar.textContent = "Salvando...";
 
-    // Save via API
-    saveField(td, numBolsa, field, newValue);
+    let completed = 0;
+    let hasError = false;
+
+    changes.forEach(({ el, field, value }) => {
+        fetch(`/api/planilha_data/${encodeURIComponent(numBolsa)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ campo: field, valor: value }),
+        })
+            .then(r => {
+                if (!r.ok) return r.json().then(d => { throw new Error(d.error || "Erro"); });
+                return r.json();
+            })
+            .then(() => {
+                el.closest(".row-modal-field").classList.add("modal-field-saved");
+                // Update stored row data
+                if (modalRowData) modalRowData[field] = value;
+            })
+            .catch(err => {
+                el.closest(".row-modal-field").classList.add("modal-field-error");
+                hasError = true;
+                console.error("Erro ao salvar " + field + ":", err.message);
+            })
+            .finally(() => {
+                completed++;
+                if (completed === changes.length) {
+                    btnSalvar.disabled = false;
+                    btnSalvar.textContent = "Salvar";
+                    if (!hasError) {
+                        // Reload table data and close modal after brief delay
+                        setTimeout(() => {
+                            fecharModal();
+                            carregarDados();
+                        }, 800);
+                    }
+                }
+            });
+    });
 }
 
-function saveField(td, numBolsa, field, value) {
+function saveField(el, numBolsa, field, value) {
+    // Kept for compatibility — not used by modal flow
     fetch(`/api/planilha_data/${encodeURIComponent(numBolsa)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -264,16 +336,14 @@ function saveField(td, numBolsa, field, value) {
             return r.json();
         })
         .then(() => {
-            // Visual feedback: green flash
-            td.classList.remove("edit-error");
-            td.classList.add("edit-saved");
-            setTimeout(() => td.classList.remove("edit-saved"), 1500);
+            el.classList.remove("edit-error");
+            el.classList.add("edit-saved");
+            setTimeout(() => el.classList.remove("edit-saved"), 1500);
         })
         .catch(err => {
-            // Visual feedback: red flash
-            td.classList.remove("edit-saved");
-            td.classList.add("edit-error");
-            setTimeout(() => td.classList.remove("edit-error"), 1500);
+            el.classList.remove("edit-saved");
+            el.classList.add("edit-error");
+            setTimeout(() => el.classList.remove("edit-error"), 1500);
             console.error("Erro ao salvar:", err.message);
         });
 }
@@ -580,6 +650,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load BASE values for dropdown fields
     if (canEdit) {
         carregarBaseValues();
+    }
+
+    // Close modal on backdrop click
+    const modalOverlay = document.getElementById("row-modal");
+    if (modalOverlay) {
+        modalOverlay.addEventListener("click", function (e) {
+            if (e.target === modalOverlay) fecharModal();
+        });
     }
 
     // Initial load

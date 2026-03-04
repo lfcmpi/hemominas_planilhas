@@ -1770,49 +1770,153 @@ tbody tr {
     color: #92400e;
 }
 
-/* Inline editing */
-.consulta-table td.editable {
-    cursor: pointer;
-    position: relative;
+/* Row modal overlay */
+.row-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
 }
 
-.consulta-table td.editable:hover {
-    background: #e8f0fe;
-    outline: 1px dashed #90b4f0;
+.row-modal-overlay.hidden {
+    display: none;
 }
 
-.consulta-table td.editing {
-    padding: 0;
-}
-
-.consulta-table td.editing input,
-.consulta-table td.editing select {
-    width: 100%;
-    padding: 0.4rem 0.5rem;
-    border: 2px solid var(--color-primary);
-    border-radius: 3px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    outline: none;
+.row-modal-card {
     background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.consulta-table td.edit-saved {
-    animation: editSaved 1.5s ease-out;
+.row-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e5e5;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    z-index: 1;
 }
 
-.consulta-table td.edit-error {
-    animation: editError 1.5s ease-out;
+.row-modal-header h3 {
+    font-size: 1.1rem;
+    color: #1a1a1a;
+    margin: 0;
 }
 
-@keyframes editSaved {
-    0% { background: #d1fae5; outline: 2px solid #34d399; }
-    100% { background: transparent; outline: none; }
+.row-modal-header .btn-icon {
+    font-size: 1.5rem;
+    color: #999;
 }
 
-@keyframes editError {
-    0% { background: #fecaca; outline: 2px solid #f87171; }
-    100% { background: transparent; outline: none; }
+.row-modal-header .btn-icon:hover {
+    color: #333;
+}
+
+.row-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    padding: 1.25rem;
+}
+
+.row-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.row-modal-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.row-modal-field .modal-value {
+    font-size: 0.9rem;
+    color: #333;
+    padding: 0.45rem 0.5rem;
+    background: #f9fafb;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+}
+
+.row-modal-field.readonly {
+    opacity: 0.55;
+}
+
+.row-modal-field.editable input,
+.row-modal-field.editable select {
+    padding: 0.45rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: #fff;
+    transition: border-color 0.2s, opacity 0.2s;
+}
+
+.row-modal-field.editable input:disabled,
+.row-modal-field.editable select:disabled {
+    opacity: 0.55;
+    background: #f9fafb;
+    cursor: not-allowed;
+}
+
+.row-modal-field.editable input:not(:disabled):focus,
+.row-modal-field.editable select:not(:disabled):focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(167, 2, 2, 0.15);
+}
+
+.row-modal-field.modal-field-saved {
+    animation: modalFieldSaved 1.5s ease-out;
+}
+
+.row-modal-field.modal-field-error {
+    animation: modalFieldError 1.5s ease-out;
+}
+
+@keyframes modalFieldSaved {
+    0% { background: #d1fae5; border-radius: 6px; }
+    100% { background: transparent; }
+}
+
+@keyframes modalFieldError {
+    0% { background: #fecaca; border-radius: 6px; }
+    100% { background: transparent; }
+}
+
+.row-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1rem;
+    border-top: 1px solid #e5e5e5;
+}
+
+/* Hint: double-click row to edit */
+.consulta-table tbody tr {
+    cursor: pointer;
 }
 
 /* Pagination */
@@ -1923,6 +2027,10 @@ tbody tr {
     .consulta-pagination {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .row-modal-grid {
+        grid-template-columns: 1fr;
     }
 
     .settings-grid-2col {

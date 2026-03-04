@@ -74,6 +74,21 @@
         <div class="consulta-pagination-btns" id="pagination-btns"></div>
     </div>
 </div>
+<!-- Modal de edicao de linha -->
+<div id="row-modal" class="row-modal-overlay hidden">
+    <div class="row-modal-card">
+        <div class="row-modal-header">
+            <h3>Bolsa <span id="modal-num-bolsa"></span></h3>
+            <button type="button" class="btn-icon" onclick="fecharModal()" title="Fechar">&times;</button>
+        </div>
+        <div class="row-modal-grid" id="modal-fields"></div>
+        <div class="row-modal-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModal()">Fechar</button>
+            <button type="button" class="btn btn-primary btn-sm" id="modal-btn-editar" onclick="habilitarEdicao()">Editar</button>
+            <button type="button" class="btn btn-primary btn-sm hidden" id="modal-btn-salvar" onclick="salvarModal()">Salvar</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
