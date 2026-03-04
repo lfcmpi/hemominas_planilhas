@@ -86,7 +86,7 @@ def seed_default_user(db_path):
                 bcrypt.gensalt(),
             ).decode("utf-8")
             conn.execute(
-                "INSERT INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?)",
+                "INSERT OR IGNORE INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?)",
                 ("anavcunha@gmail.com", "Ana Cunha", password_hash, "admin"),
             )
             conn.commit()
