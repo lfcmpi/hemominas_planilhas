@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Hemominas > Sheets{% endblock %}</title>
+    <title>{% block title %}HOB Bolsas de Sangue{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <span class="sidebar-brand-title">Hemominas</span>
-            <span class="sidebar-brand-subtitle">Sheets</span>
+            <span class="sidebar-brand-title">HOB</span>
+            <span class="sidebar-brand-subtitle">Bolsas de Sangue</span>
         </div>
         <nav class="sidebar-nav">
             {% if current_user.has_role("admin", "manager", "uploader") %}
@@ -106,7 +106,7 @@
         <button type="button" class="hamburger" id="hamburger-btn">
             <span></span><span></span><span></span>
         </button>
-        <span class="mobile-brand">Hemominas > Sheets</span>
+        <span class="mobile-brand">HOB Bolsas de Sangue</span>
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
