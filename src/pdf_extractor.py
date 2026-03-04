@@ -34,10 +34,12 @@ class Comprovante:
 def _normalizar_abo(raw: str) -> str:
     """Normalize ABO blood type from OCR output.
 
-    OCR often misreads 'O' as '(0)', '(6)', '0', '6', '16)', etc.
+    OCR often misreads 'O' as digits (0, 6, 9, 16, etc.).
+    Rule: any all-digit value must be 'O' — the only blood group
+    that OCR confuses with numbers.
     """
     cleaned = re.sub(r"[()|\[\]]", "", raw).strip()
-    if cleaned in ("0", "6", "16"):
+    if cleaned.isdigit():
         return "O"
     if cleaned.upper() in ("O", "A", "B", "AB"):
         return cleaned.upper()

@@ -39,6 +39,23 @@ class TestNormalizarAbo:
     def test_sixteen(self):
         assert _normalizar_abo("16)") == "O"
 
+    def test_nine_becomes_o(self):
+        """OCR do PDF 02/03/2026 leu 'O' como '9'."""
+        assert _normalizar_abo("9") == "O"
+
+    def test_any_single_digit_becomes_o(self):
+        """Qualquer digito isolado deve virar 'O'."""
+        for d in "0123456789":
+            assert _normalizar_abo(d) == "O", f"Falhou para '{d}'"
+
+    def test_multi_digit_becomes_o(self):
+        """Qualquer sequencia de digitos deve virar 'O'."""
+        assert _normalizar_abo("16") == "O"
+        assert _normalizar_abo("19") == "O"
+
+    def test_parenthesis_nine(self):
+        assert _normalizar_abo("(9)") == "O"
+
 
 class TestParseDate:
     def test_standard_format(self):
